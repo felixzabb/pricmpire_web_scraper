@@ -85,8 +85,22 @@ def main(lfi):
     limit = input("Price limit? (integer) ").lower()  # decides the price limit of the search
     sort = input("Sort by ...? (buff, cheapest, marketcap, tradevolume) ").lower()  # decides how the search items are sorted
     order = input("Sort ascending or descending? (a/d) ").lower()  # decides if search items are ASC or DESC
-    blacklist = input("Blacklist items: (comma separated, no space) ").lower()  # blacklists characters
-    search = input("Search for (a) specific item/s: ").lower()  # takes specific search arguments
+
+    if only_cases == "" or only_cases == "n":
+
+        blacklist = input("Blacklist items: (comma separated, no space) ").lower()  # blacklists characters
+
+    elif only_cases == "y":
+
+        blacklist = "hardened"
+
+    if only_cases == "" or only_cases == "n":
+
+        search = input("Search for (a) specific item/s: ").lower()  # takes specific search arguments
+
+    else:
+
+        search = "case"
 
     if only_cases == "" or only_cases == "n":
 
@@ -244,37 +258,20 @@ def get_html(itr, oc, limit, sort, order, bl, search):
     driver = webdriver.Edge()
 
     # check if only cases, then go to site and wait for page load
-    if oc == "y":
 
-        print(f"accessing Website at https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist=hardened&search=case...")
+    print(f"accessing Website at https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}...")
 
-        driver.get(f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist=hardened&search=case")
+    driver.get(f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}")
 
-        try:
+    try:
 
-            driver.find_element(By.CSS_SELECTOR, ".fc-cta-consent").click()
+        driver.find_element(By.CSS_SELECTOR, ".fc-cta-consent").click()
 
-        except selenium.common.exceptions.NoSuchElementException:
+    except selenium.common.exceptions.NoSuchElementException:
 
-            print("Button not found")
+        print("Button not found")
 
-        accessed_website = f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist=hardened&search=case"
-
-    else:
-
-        print(f"accessing Website at https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}...")
-
-        driver.get(f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}")
-
-        try:
-
-            driver.find_element(By.CSS_SELECTOR, ".fc-cta-consent").click()
-
-        except selenium.common.exceptions.NoSuchElementException:
-
-            print("Button not found")
-
-        accessed_website = f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}"
+    accessed_website = f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}"
 
     # adds to log 5 (accessed website)
     with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a",
@@ -287,8 +284,9 @@ def get_html(itr, oc, limit, sort, order, bl, search):
     time.sleep(WAIT_TIME)
 
     # get html contents of all pages by clicking next page button and start extraction function
-    for i in range(int(itr)):
+    for i in range(0, int(itr)):
 
+        print(f"Itr {i}")
         print(f"Getting Page ({i + 1}) contents...")
 
         # adds to log 6 (confirmation for getting page contents)
@@ -301,30 +299,36 @@ def get_html(itr, oc, limit, sort, order, bl, search):
 
             try:
 
-                try:
+                if not i == 0:
 
-                    driver.find_element(By.CSS_SELECTOR, ".fas.fa-chevron-right").click()
-                    time.sleep(WAIT_TIME)
+                    print("passed")
+                    try:
 
-                except selenium.common.exceptions.NoSuchElementException:
+                        driver.find_element(By.CSS_SELECTOR, ".fas.fa-chevron-right").click()
+                        time.sleep(WAIT_TIME)
 
-                    print(f"No next page button so probably first page")
+                    except selenium.common.exceptions.NoSuchElementException:
+
+                        print(f"No next page button so probably last page")
+
+                        break
+                else:
+
+                    pass
 
                 # get contents:
                 contents = BeautifulSoup(driver.page_source, "html.parser")
 
                 print(f"extracting data...")
 
-                # extract the data into a list
-                if extract_data(contents) is False:
+                # try to extract the data into a list
+                if extract_data(contents) is False:  # if fails, reload page then try again
 
                     # adds to log 7 (unsuccessful extraction)
-
                     lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
                     lf.write(f"attempting to skip to next page...     at {datetime.today()}... ")
 
                     # reload page and wait for page load longer this time:
-
                     driver.refresh()
                     time.sleep(WAIT_TIME + 10)
 
@@ -334,10 +338,9 @@ def get_html(itr, oc, limit, sort, order, bl, search):
                     print(f"extracting data...")
 
                     # try again:
-                    if extract_data(contents_reload) is False:
+                    if extract_data(contents_reload) is False:  # try to access next page by link
 
                         # adds to log 8 (unsuccessful extraction)
-
                         lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
                         lf.write(f"attempting to skip to next page...     at {datetime.today()}... ")
 
@@ -472,6 +475,7 @@ def extract_data(content):
             all_prices_sub_save_list.append(j)
 
         try:
+
             if all_names_save_list[-1] == all_names_save_list[-31]:
                 print(f"page reloaded same content, retrying")
 
