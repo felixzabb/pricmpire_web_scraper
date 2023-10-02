@@ -1,0 +1,12 @@
+Results file for search on 2023-10-02 13:39:38.280734 with search params:
+
+daily_save --- n
+only_cases --- y
+limit --- 1000000
+sort --- marketcap
+order --- :DESC
+blacklist --- hardened
+search --- case
+iterations --- 2
+calc_dmarket_steam --- n
+
