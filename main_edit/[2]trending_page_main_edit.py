@@ -17,22 +17,20 @@ import os
 # "Global" objects...........................
 
 # global save lists:
-all_names_save_list = []
-all_prices_save_list = []
-all_prices_sub_save_list = []
+ALL_NAMES_SAVE_LIST = []
+ALL_PRICES_SAVE_LIST = []
+ALL_PRICES_QUAD_SAVE_LIST = []
 
 # list with premade file names (expandable)
 possible_spreadsheets_list = ["C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[3]any_run_saves\\webscraper_test.xlsx",
                               "C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[3]any_run_saves\\onlycases.xlsx"]
 
 # dictionary's and lists for global item accessibility
-GLOBAL_PARAM_DICT = {"exceptions": False, "daily_save": False, "log_file_index": 0}
-PARAMS_LIST = ["daily_save", "only_cases", "limit", "sort", "order", "blacklist", "search", "iterations", "calc_dmarket_steam", "daily_save"]
-ACTUAL_PARAM_LIST = []
+GLOBAL_PARAM_DICT = {"website_url": "", "exceptions": False, "daily_save": False, "log_file_index": 0, "results_file_index": 0, "sheet_index": 0}
+PARAMS_DICT = {"daily_save": "n", "only_cases": "n", "limit": 1000000, "sort": "marketcap", "order": ":DESC", "blacklist": "", "search": "", "iterations": 5, "calc_dmarket_steam": "n"}
 
 # global values
 WAIT_TIME = 10
-LOG_FILE_INDEX = 0
 
 # default translation table
 TRANSLATION_TABLE = dict.fromkeys(map(ord, '\n\t'), None)
@@ -41,6 +39,10 @@ TRANSLATION_TABLE = dict.fromkeys(map(ord, '\n\t'), None)
 DATETIME = datetime.today()
 DATE = date.today()
 
+# paths
+LOG_PATH = "C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_"
+RESULTS_PATH = "C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_"
+
 
 # FUNCTIONS...................................
 
@@ -48,37 +50,522 @@ DATE = date.today()
 # params(log file index)
 #
 # \#
-def main(lfi):
-    # creating error list index
-    i = 0
+def main():
+    # adds log text 1 (start time of log)
+    lf.write(f"Log file " + str(GLOBAL_PARAM_DICT["log_file_index"]) + f" for normal run\n"
+                                                                       f"Starting log at {datetime.today()}\n")
 
-    while not i == 20:  # 20 because there can be only 20 log files per day. Function searches which log file names already exist and takes one which doesn't
+    # gets file index for log file
+    get_find_index("log", "log_file_index")
 
-        lfi += 1
+    # gets result file index
+    get_find_index("result", "results_file_index")
 
-        if os.path.exists(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[{str(lfi)}].txt") is True:
+    # collect all params
+    get_params()
+
+    GLOBAL_PARAM_DICT["website_url"] = "https://pricempire.com/trending?to={}&sort={}{}&blacklist={}&search={}".format(int(PARAMS_DICT["limit"]), str(PARAMS_DICT["sort"]), str(PARAMS_DICT["order"]),
+                                                                                                                       str(PARAMS_DICT["blacklist"]), str(PARAMS_DICT["search"]))
+
+    # catches errors to put in the log file
+    try:
+        # functions:
+
+        # get the html contents
+        get_html()
+
+        print_results_yn = input("Print result text file? (y/n) ").lower()  # decides if program should make a spreadsheet with all the data
+
+        # assigns default value to print results param
+        if print_results_yn == "":
+            print_results_yn = "n"
+
+        # makes spreadsheet
+        make_spreadsheet_normal(an=ALL_NAMES_SAVE_LIST, aps=ALL_PRICES_QUAD_SAVE_LIST, cds=int(PARAMS_DICT["calc_dmarket_steam"]),
+                                si=int(GLOBAL_PARAM_DICT["sheet_index"]))
+
+        # adds log text 3 (program success (if succeeded)
+        lf.write(f"completed program without errors at {datetime.today()}\n")
+
+        if print_results_yn == "y":
+            print_results(si=GLOBAL_PARAM_DICT["sheet_index"])
+
+    except Exception as e:
+
+        print(f"Error when running program")
+
+        # adds log text 5 (program unsuccessful(if unsuccessful))
+        lf.write(f"did not complete program regularly     at {datetime.today()}\n")
+        lf.write(f"error was: {str(e)}\n")
+
+        print(e)
+        # print(traceback.print_exc())
+
+
+# get html contents of page and start extraction function
+def get_html():
+    # get website url
+    accessed_website = GLOBAL_PARAM_DICT["website_url"]
+
+    # driver (currently Edge):
+    driver = webdriver.Edge()
+
+    # go to site and wait for page load
+
+    print(f"{accessed_website}\n...")
+
+    driver.get(accessed_website)
+    time.sleep(5)
+
+    # try to click the cookies consent button if it exists
+    try:
+
+        driver.find_element(By.CSS_SELECTOR, ".fc-cta-consent").click()
+
+    except selenium.common.exceptions.NoSuchElementException:
+
+        print("Button not found")
+
+    # adds to log 5 (accessed website)
+    lf.write(f"accessed website ({accessed_website})     at {datetime.today()}")
+
+    # page load time:
+    time.sleep(WAIT_TIME)
+
+    # get html contents of all pages by clicking next page button and start extraction function
+    for i in range(0, int(PARAMS_DICT["iterations"])):
+
+        print(f"Itr {i}")
+        print(f"Getting Page ({i + 1}) contents...")
+
+        # adds to log 6 (confirmation for getting page contents)
+        lf.write(f"Getting Page ({i + 1}) contents...       at {datetime.today()}... ")
+
+        # click next page button and wait for page load:
+        try:
+
+            if i == 0:
+
+                print("First page so no next page button to click")
+                pass
+
+            else:
+
+                try:
+
+                    driver.find_element(By.CSS_SELECTOR, ".fas.fa-chevron-right").click()
+                    time.sleep(WAIT_TIME)
+
+                except selenium.common.exceptions.NoSuchElementException:
+
+                    print(f"No next page button so probably last page")
+
+                    break
+
+            # get contents:
+            contents = BeautifulSoup(driver.page_source, "html.parser")
+
+            print(f"extracting data...")
+
+            # try to extract the data into a list
+            if extract_data(contents) is False:  # if fails, reload page then try again
+
+                # adds to log 7 (unsuccessful extraction)
+                lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
+                lf.write(f"attempting to reload page...     at {datetime.today()}... ")
+
+                # reload page and wait for page load longer this time:
+                driver.refresh()
+                time.sleep(WAIT_TIME + 10)
+
+                # get contents:
+                contents_reload = BeautifulSoup(driver.page_source, "html.parser")
+
+                print(f"extracting data...")
+
+                # try again:
+                if extract_data(contents_reload) is False:  # try to access next page by link
+
+                    # adds to log 8 (unsuccessful extraction)
+                    lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
+                    lf.write(f"attempting to skip to next page...     at {datetime.today()}... ")
+
+                    print(f"attempting to skip to next page... ")
+
+                    # check if only cases, then go to site and wait longer for page load
+                    driver.get(str(GLOBAL_PARAM_DICT["website_url"]))
+                    time.sleep(WAIT_TIME + 10)
+
+                    # get contents
+                    contents_reload_2 = BeautifulSoup(driver.page_source, "html.parser")
+
+                    if extract_data(contents_reload_2) is False:
+                        lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
+                        lf.write(
+                            f"aborting and saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))})     at {datetime.today()}\n")
+
+                        print(
+                            f"Something broke, saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))}) and aborting")
+
+                        break
+            else:
+                pass
+
+        except selenium.common.exceptions.NoSuchElementException:
+
+            lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
+            lf.write(f"Already at last page, going to make spreadsheet now     at {datetime.today()}\n")
+
+            GLOBAL_PARAM_DICT["exceptions"] = True
+
+            print("Exception: {} Already at last page, going to make spreadsheet now".format(
+                GLOBAL_PARAM_DICT["exceptions"]))
+
+            break
+
+
+# extract the data by stripping all unneeded characters and appending to the global list
+# params (html contents of page)
+def extract_data(content):
+    lf.write(f"SUCCESSFUL     at {datetime.today()}\n")
+    lf.write(f"setting up extraction objects     at {datetime.today()}\n")
+
+    print(f"Setting up extraction objects...\n")
+
+    # get all names and prices from html contents:
+    all_names = content.find_all("div", class_="link")
+    all_prices = content.find_all("div", class_="price")
+
+    # make intermittent save lists:
+    all_prices_list = []
+    all_names_list = []
+
+    # orders all prices in groups of four (buff, cheapest, market-cap, trade volume)
+    all_prices_list_quad = []
+
+    # strip of irrelevant characters and append every item in all_names and all_prices:
+    # [0:-7] to strip of the "(Buy now)" text at the end of every name
+    for i in all_names:
+        all_names_list.append(i.text.translate(TRANSLATION_TABLE)[0:-7])
+
+    for i in all_prices:
+        all_prices_list.append(i.text.translate(TRANSLATION_TABLE))
+
+    # pop the first item in all prices (entire cs:go market-cap)
+    all_prices_list.pop(0)
+
+    # pop all duplicate items in all_prices:
+    for i in range((len(all_prices_list)) - 1, 0, -1):
+        if abs(i) % 2 == 1:
+            all_prices_list.pop(i)
+
+    # group all elements by four(see up top):
+    for i in range(0, len(all_prices_list) - 1, 4):
+        all_prices_list_quad.append([all_prices_list[i], all_prices_list[(i + 1)],
+                                     all_prices_list[(i + 2)], all_prices_list[(i + 3)]])
+
+    lf.write(f"Extracted data for current page:      at {datetime.today()}\n\n")
+    lf.write(f"all names: {all_names_list}\n")
+    lf.write(f"all prices: {all_prices_list}\n")
+    lf.write(f"all prices in quad: {all_prices_list_quad}\n")
+
+    # print all lists:
+    print(f"all names:"
+          f"{all_names_list}")
+    print(f"all prices:"
+          f"{all_prices_list}")
+    print(f"all prices in quad"
+          f"{all_prices_list_quad}\n")
+
+    # check if page had loaded and items were added:
+    # (always thirty elements per page, so len of name list should be 30)
+    if len(all_names_list) <= 30:
+
+        # print items to check.
+        # print(f"checking1: {all_prices_list[0]}")
+        # print(f"checking2: {all_names_list[0]}")
+
+        print(f"saving to global save lists...")
+
+        lf.write(f"saving to global save lists     at {datetime.today()}\n\n")
+
+        # names
+        for i in all_names_list:
+            ALL_NAMES_SAVE_LIST.append(i)
+
+        # prices
+        for k in all_prices_list:
+            ALL_PRICES_SAVE_LIST.append(k)
+
+        # prices quad
+        for j in all_prices_list_quad:
+            ALL_PRICES_QUAD_SAVE_LIST.append(j)
+
+        try:
+
+            if ALL_NAMES_SAVE_LIST[-1] == ALL_NAMES_SAVE_LIST[-31]:
+                print(f"page reloaded same content, retrying")
+
+                lf.write(f"Page reloaded same content, retrying     at {datetime.today()}... ")
+
+                return False
+
+        except IndexError:
+
+            print(f"first list, so nothing to check")
+            print("proceeding")
+
+    # "throw error" if page doesn't load
+    elif len(all_names_list) < 1:
+
+        lf.write(f"Page didn't load or empty, retrying     at {datetime.today()}... ")
+
+        print("Page didn't load or empty, trying again")
+
+        return False
+
+
+# make spreadsheet with global save lists
+# params (all names, all prices, calculate dmarket/steam arbitrage ?, sheet index)
+def make_spreadsheet_normal(an, aps, cds, si):
+    if GLOBAL_PARAM_DICT["exceptions"] is True:
+
+        print(f"Exception when getting page contents..\n"
+              f"Creating exception spreadsheet and writing to it...")
+
+        possible_spreadsheets_list.append("exception.xlsx")
+
+        exception_workbook = Workbook()
+        exception_workbook.save(possible_spreadsheets_list[-1])
+
+        si = -1
+
+        lf.write(f"Exception when getting page contents..\n"
+                 f"Creating exception spreadsheet and writing to it... "
+                 f"proceeding      at {datetime.today()}\n")
+
+    else:
+
+        if GLOBAL_PARAM_DICT["daily_save"] is True:
+
+            print(f"This is a daily save, creating new workbook\n"
+                  f"Today is the {datetime.today()}")
+
+            lf.write(f"This is a daily save ({DATE}), creating new workbook... "
+                     f"proceeding      at {datetime.today()}\n")
+
+            if str(PARAMS_DICT["only_cases"]) == "y":
+
+                possible_spreadsheets_list.append(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[0]daily_saves\\[0-1]only_cases\\daily_save_{str(DATE)}_onlycases.xlsx")
+
+            else:
+
+                possible_spreadsheets_list.append(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[0]daily_saves\\[0-2]normal\\daily_save_{str(DATE)}.xlsx")
+
+            daily_workbook = Workbook()
+            daily_workbook.save(possible_spreadsheets_list[-1])
+
+            si = -1
+
+        else:
+
+            lf.write(f"No exception when making workbook..\n"
+                     f"proceeding as normal with spreadsheet creation... "
+                     f"proceeding      at {datetime.today()}\n")
+
+            print(f"No exception when making workbook..\n"
+                  f"proceeding as normal with spreadsheet creation")
+
+    print(f"Making spreadsheet...")
+
+    # second translation tabel specific to this function to preserve some character
+    translation_table_for_int = dict.fromkeys(map(ord, '.,$'), None)
+
+    # load spreadsheet and format it
+    workbook = load_workbook(str(possible_spreadsheets_list[si]))
+    sheet = workbook.active
+    sheet.title = "Main"
+    sheet["A1"] = "Item name"
+    sheet.column_dimensions["A"].width = 35
+    sheet["B1"] = "Buff price"
+    sheet.column_dimensions["B"].width = 25
+    sheet["C1"] = "Cheapest price"
+    sheet.column_dimensions["C"].width = 25
+    sheet["D1"] = "Marketcap"
+    sheet.column_dimensions["D"].width = 25
+    sheet["E1"] = "Trade volume"
+    sheet.column_dimensions["E"].width = 25
+    sheet["F1"] = "estimated supply"
+    sheet.column_dimensions["F"].width = 25
+    sheet["G1"] = "gross estimated arbitrage"
+    sheet.column_dimensions["G"].width = 25
+    sheet["H1"] = "dmarket/steam arbitrage"
+    sheet.column_dimensions["H"].width = 25
+
+    row_start = 2  # start below the header row 2
+    col_start = 1  # starts from column B
+
+    print(f"adding data to spreadsheet...")
+
+    lf.write(f"adding data rows to spreadsheet     at {datetime.today()}\n")
+
+    # add all items into the rows:
+    for i in range(0, len(an)):
+
+        # add name at current index
+        sheet.cell(row_start + i, col_start).value = an[i]
+
+        # add buff price at current index
+        sheet.cell(row_start + i, col_start + 1).value = aps[i][0]
+
+        # add cheapest price at current index
+        sheet.cell(row_start + i, col_start + 2).value = aps[i][1]
+
+        # add market-cap at current index
+        sheet.cell(row_start + i, col_start + 3).value = aps[i][2]
+
+        # add trade volume at current index
+        sheet.cell(row_start + i, col_start + 4).value = aps[i][3]
+
+        # add estimated supply at current index
+        sheet.cell(row_start + i, col_start + 5).value = str(float(aps[i][2].translate(translation_table_for_int))
+
+                                                             / float(
+
+            aps[i][1].translate(translation_table_for_int)))
+
+        # add cheapest/buff arbitrage at current index
+        sheet.cell(row_start + i, col_start + 6).value = str(round(int(aps[i][1].translate(translation_table_for_int))
+
+                                                                   / int(
+
+            aps[i][0].translate(translation_table_for_int)), 2)) + "%"
+
+        # add dmarket/steam arbitrage at current index if requested
+        if cds is True:
+
+            sheet.cell(row_start + i, col_start + 7).value = calculate_dmarket_steam_arbitrage(sn=an[i], fn=False,
+                                                                                               sf="")
+
+        else:
+            pass
+
+    lf.write(f"saving spreadsheet (name: {possible_spreadsheets_list[si]})...\n"
+             f"saved {len(ALL_NAMES_SAVE_LIST)} rows successfully to {possible_spreadsheets_list[si]}      at {datetime.today()}\n")
+
+    print(f"saving spreadsheet {possible_spreadsheets_list[si]}...")
+    print(f"saved {len(ALL_NAMES_SAVE_LIST)} rows successfully to {possible_spreadsheets_list[si]}")
+
+    # save spreadsheet
+    workbook.save(str(possible_spreadsheets_list[si]))
+
+    GLOBAL_PARAM_DICT["sheet_index"] = si
+
+
+# function to print results and possible buy options to a text file
+
+def print_results(si):
+    # second translation tabel specific to this function to preserve some character
+    translation_table_for_print = dict.fromkeys(map(ord, '%'), None)
+
+    results_numbers_list = []
+    columns_list = ["A", "B", "C", "D", "E", "F", "G"]
+
+    wb = load_workbook(str(possible_spreadsheets_list[int(si)]))
+    sheet = wb.active
+
+    print(f"gathering results...")
+
+    lf.write(f"gathering results to proceed with result print (file: ")
+
+    for i in range(2, len(ALL_NAMES_SAVE_LIST)):
+
+        if float(str(sheet[f"G{str(i)}"].value).translate(translation_table_for_print)) < 0.7:
+
+            results_numbers_list.append(i)
+
+        else:
 
             pass
 
-        elif os.path.exists(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[{str(lfi)}].txt") is False:
+    lf.write(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(
+        GLOBAL_PARAM_DICT["results_file_index"]) + f"].txt)       at {datetime.today()}\n")
+
+    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["results_file_index"]) + f"].txt", "x") as rf:
+
+        rf.write(f"Results file for search on {str(DATETIME)} with search params:\n\n")
+
+        for i in PARAMS_DICT:
+            rf.write(f"{str(i)} --- {str(PARAMS_DICT[i])}\n")
+
+        rf.write("\n")
+        curr_option_index = 1
+
+        for i in results_numbers_list:
+
+            helper_result_list = []
+
+            for k in columns_list:
+                helper_result_list.append(str(sheet[f"{str(k)}{str(i)}"].value))
+
+            print(f"Option {str(curr_option_index)}: {str(helper_result_list)}")
+
+            rf.write(f"Option {str(curr_option_index)}: {str(helper_result_list[0])}:\n"
+                     f" -buff price: {helper_result_list[1]}\n"
+                     f" -cheapest price: {helper_result_list[2]}\n"
+                     f" -market-cap: {helper_result_list[3]}\n"
+                     f" -trade volume: {helper_result_list[4]}\n"
+                     f" -estimated supply: {helper_result_list[5]}\n"
+                     f" -gross estimated arbitrage: {helper_result_list[6]}\n"
+                     f"\n")
+
+            curr_option_index += 1
+
+    lf.write(f"Successfully wrote to result file     at {datetime.today()}\n")
+
+
+def get_find_index(file_type, global_param_name):
+    if file_type == "log":
+
+        file_path = LOG_PATH
+
+    elif file_type == "result":
+
+        file_path = RESULTS_PATH
+
+    else:
+
+        pass
+    # creating error list index
+    i = 0
+    lfi = 0
+
+    while not i == 20:  # 20 because there can be only 20 log files per day. Function searches which log file names already exist and takes one which doesn't
+
+        if os.path.exists(f"{str(file_path)}{str(DATE)}[{str(lfi)}].txt") is True:
+
+            pass
+
+        elif os.path.exists(f"{str(file_path)}{str(DATE)}[{str(lfi)}].txt") is False:
 
             break
 
         elif i == 20:
 
-            print(f"Aborting log file. There can't be more than 20.")
+            print(f"Aborting file creation. There can't be more than 20.")
 
+            break
+
+        lfi += 1
         i += 1
 
     # saves the log file index of the current run
-    GLOBAL_PARAM_DICT["log_file_index"] = int(lfi)
 
-    # adds log text 1 (start time of log)
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[{str(lfi)}].txt", "x", encoding="utf-8") as lf:
+    print(f"adds {lfi} to {global_param_name}")
+    GLOBAL_PARAM_DICT[str(global_param_name)] = int(lfi)
 
-        lf.write(f"Log file {lfi} for normal run\n"
-                 f"Starting log at {datetime.today()}\n")
 
+def get_params():
     # parameters:
     only_cases = input("Search only for cases? (y/n) ").lower()  # decides if to only search for cases or not
     daily_save = input("Is this a daily save for historical data? (y/n) ")  # decides if run is treated as daily safe
@@ -98,7 +585,7 @@ def main(lfi):
 
         search = input("Search for (a) specific item/s: ").lower()  # takes specific search arguments
 
-    else:
+    elif only_cases == "y":
 
         search = "case"
 
@@ -156,7 +643,7 @@ def main(lfi):
 
     # calc dmarket/steam arbitrage
     if calc_dmarket_steam == "":
-        calc_dmarket_steam = False
+        calc_dmarket_steam = "n"
 
     # daily save
     if daily_save == "":
@@ -170,11 +657,12 @@ def main(lfi):
     # assign sheet index:
     if only_cases == "y":
 
-        sheet_index = 1
+        GLOBAL_PARAM_DICT["sheet_index"] = 1
 
     else:
 
-        sheet_index = 0  # here more options can be added
+        # here more options can be added
+        GLOBAL_PARAM_DICT["sheet_index"] = 0
 
     # print all info
     print(f"\nonly cases: {only_cases}\n"
@@ -190,564 +678,22 @@ def main(lfi):
           f"Getting html contents...\n")
 
     # append all params to the list which saves them
-    ACTUAL_PARAM_LIST.append([daily_save, only_cases, limit, sort, order, blacklist, search, iterations, calc_dmarket_steam])
+    PARAMS_DICT["daily_save"] = daily_save
+    PARAMS_DICT["only_cases"] = only_cases
+    PARAMS_DICT["limit"] = limit
+    PARAMS_DICT["sort"] = sort
+    PARAMS_DICT["order"] = order
+    PARAMS_DICT["blacklist"] = blacklist
+    PARAMS_DICT["search"] = search
+    PARAMS_DICT["iterations"] = iterations
+    PARAMS_DICT["calc_dmarket_steam"] = calc_dmarket_steam
 
     # adds log text 2 (all params)
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[{str(lfi)}].txt", "a", encoding="utf-8") as lf:
-
-        lf.write(f"Params assigned at {datetime.today()}: \n\n")
-
-        for i in range(0, len(PARAMS_LIST) - 1):
-            lf.write(f"{str(PARAMS_LIST[i])} --- {str(ACTUAL_PARAM_LIST[0][i])}\n\n")
-
-    # catches errors to put in the log file
-    try:
-        # functions:
-
-        # get the html contents
-        get_html(itr=iterations, oc=only_cases, limit=limit, sort=sort, order=order, bl=blacklist,
-                 search=search)
-
-        print_results_yn = input("Print result text file? (y/n) ").lower()  # decides if program should make a spreadsheet with all the data
-
-        # assigns default value to print results param
-        if print_results_yn == "":
-            print_results_yn = "n"
-
-        if print_results_yn == "y":
-
-            print_results(
-                si=make_spreadsheet_normal(an=all_names_save_list, aps=all_prices_sub_save_list, cds=calc_dmarket_steam,
-                                           si=sheet_index))
-
-            # adds log text 3 (program success (if succeeded)
-            with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                    GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-                lf.write(f"completed program without errors at {datetime.today()}\n")
-
-        else:
-
-            make_spreadsheet_normal(an=all_names_save_list, aps=all_prices_sub_save_list, cds=calc_dmarket_steam,
-                                    si=sheet_index)
-
-            # adds log text 4 (program success (if succeeded)
-            with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                    GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-                lf.write(f"completed program without errors at {datetime.today()}\n")
-
-    except Exception as e:
-
-        print(f"Error when running program")
-
-        # adds log text 5 (program unsuccessful(if unsuccessful))
-        with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a") as lf:
-
-            lf.write(f"did not complete program regularly     at {datetime.today()}\n")
-            lf.write(f"error was: {str(e)}\n")
-
-        print(e)
-        # print(traceback.print_exc())
-
-
-# get html contents of page and start extraction function
-def get_html(itr, oc, limit, sort, order, bl, search):
-    # driver (currently Edge):
-    driver = webdriver.Edge()
-
-    # check if only cases, then go to site and wait for page load
-
-    print(f"accessing Website at https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}...")
-
-    driver.get(f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}")
-
-    try:
-
-        driver.find_element(By.CSS_SELECTOR, ".fc-cta-consent").click()
-
-    except selenium.common.exceptions.NoSuchElementException:
-
-        print("Button not found")
-
-    accessed_website = f"https://pricempire.com/trending?to={limit}&sort={sort}{order}&blacklist={bl}&search={search}"
-
-    # adds to log 5 (accessed website)
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a",
-              encoding="utf-8") as lf:
-
-        lf.write(f"accessed website ({accessed_website})     at {datetime.today()}")
-
-    # page load time:
-    print("...")
-    time.sleep(WAIT_TIME)
-
-    # get html contents of all pages by clicking next page button and start extraction function
-    for i in range(0, int(itr)):
-
-        print(f"Itr {i}")
-        print(f"Getting Page ({i + 1}) contents...")
-
-        # adds to log 6 (confirmation for getting page contents)
-        with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a",
-                  encoding="utf-8") as lf:
-
-            lf.write(f"Getting Page ({i + 1}) contents...       at {datetime.today()}... ")
-
-            # click next page button and wait for page load:
-
-            try:
-
-                if not i == 0:
-
-                    print("passed")
-                    try:
-
-                        driver.find_element(By.CSS_SELECTOR, ".fas.fa-chevron-right").click()
-                        time.sleep(WAIT_TIME)
-
-                    except selenium.common.exceptions.NoSuchElementException:
-
-                        print(f"No next page button so probably last page")
-
-                        break
-                else:
-
-                    pass
-
-                # get contents:
-                contents = BeautifulSoup(driver.page_source, "html.parser")
-
-                print(f"extracting data...")
-
-                # try to extract the data into a list
-                if extract_data(contents) is False:  # if fails, reload page then try again
-
-                    # adds to log 7 (unsuccessful extraction)
-                    lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
-                    lf.write(f"attempting to skip to next page...     at {datetime.today()}... ")
-
-                    # reload page and wait for page load longer this time:
-                    driver.refresh()
-                    time.sleep(WAIT_TIME + 10)
-
-                    # get contents:
-                    contents_reload = BeautifulSoup(driver.page_source, "html.parser")
-
-                    print(f"extracting data...")
-
-                    # try again:
-                    if extract_data(contents_reload) is False:  # try to access next page by link
-
-                        # adds to log 8 (unsuccessful extraction)
-                        lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
-                        lf.write(f"attempting to skip to next page...     at {datetime.today()}... ")
-
-                        print(f"attempting to skip to next page... ")
-
-                        # check if only cases, then go to site and wait for page load
-                        if oc == "y":
-
-                            print(
-                                f"accessing Website at https://pricempire.com/trending?page={itr}&to={limit}&sort={sort}{order}&blacklist=hardened&search=case...")
-
-                            driver.get(
-                                f"https://pricempire.com/trending?page={itr}&to={limit}&sort={sort}{order}&blacklist=hardened&search=case")
-
-                        else:
-
-                            print(
-                                f"accessing Website at https://pricempire.com/trending?page={itr}&to={limit}&sort={sort}{order}&blacklist={bl}&search={search}...")
-
-                            driver.get(
-                                f"https://pricempire.com/trending?page={itr}&to={limit}&sort={sort}{order}&blacklist={bl}&search={search}")
-
-                        contents_reload_2 = BeautifulSoup(driver.page_source, "html.parser")
-
-                        if extract_data(contents_reload) is False:
-                            lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
-                            lf.write(
-                                f"aborting and saving current items (amount: {str(len(all_names_save_list))})     at {datetime.today()}\n")
-
-                            print(
-                                f"Something broke, saving current items (amount: {str(len(all_names_save_list))}) and aborting")
-
-                            break
-                else:
-                    pass
-
-            except selenium.common.exceptions.NoSuchElementException:
-
-                lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
-                lf.write(f"Already at last page, going to make spreadsheet now     at {datetime.today()}\n")
-
-                GLOBAL_PARAM_DICT["exceptions"] = True
-
-                print("Exception: {} Already at last page, going to make spreadsheet now".format(
-                    GLOBAL_PARAM_DICT["exceptions"]))
-
-                break
-
-
-# extract the data by stripping all unneeded characters and appending to the global list
-# params (html contents of page)
-def extract_data(content):
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-            GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-        lf.write(f"SUCCESSFUL     at {datetime.today()}\n")
-        lf.write(f"setting up extraction objects     at {datetime.today()}\n")
-
-    print(f"Setting up extraction objects...\n")
-
-    # get all names and prices from html contents:
-    all_names = content.find_all("div", class_="link")
-    all_prices = content.find_all("div", class_="price")
-
-    # make intermittent save lists:
-    all_prices_list = []
-    all_names_list = []
-
-    # orders all prices in groups of four (buff, cheapest, market-cap, trade volume)
-    all_prices_list_quad = []
-
-    # strip of irrelevant characters and append every item in all_names and all_prices:
-    # [0:-7] to strip of the "(Buy now)" text at the end of every name
-    for i in all_names:
-        all_names_list.append(i.text.translate(TRANSLATION_TABLE)[0:-7])
-
-    for i in all_prices:
-        all_prices_list.append(i.text.translate(TRANSLATION_TABLE))
-
-    # pop the first item in all prices (entire cs:go market-cap)
-    all_prices_list.pop(0)
-
-    # pop all duplicate items in all_prices:
-    for i in range((len(all_prices_list)) - 1, 0, -1):
-        if abs(i) % 2 == 1:
-            all_prices_list.pop(i)
-
-    # group all elements by four(see up top):
-    for i in range(0, len(all_prices_list) - 1, 4):
-        all_prices_list_quad.append([all_prices_list[i], all_prices_list[(i + 1)],
-                                     all_prices_list[(i + 2)], all_prices_list[(i + 3)]])
-
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-            GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-        lf.write(f"Extracted data for current page:      at {datetime.today()}\n\n")
-        lf.write(f"all names: {all_names_list}\n")
-        lf.write(f"all prices: {all_prices_list}\n")
-        lf.write(f"all prices in quad: {all_prices_list_quad}\n")
-
-    # print all lists:
-    print(f"all names:"
-          f"{all_names_list}")
-    print(f"all prices:"
-          f"{all_prices_list}")
-    print(f"all prices in quad"
-          f"{all_prices_list_quad}\n")
-
-    # check if page had loaded and items were added:
-    # (always thirty elements per page, so len of name list should be 30)
-    if len(all_names_list) <= 30:
-
-        # print items to check.
-        # print(f"checking1: {all_prices_list[0]}")
-        # print(f"checking2: {all_names_list[0]}")
-
-        print(f"saving to global save lists...")
-        with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-            lf.write(f"saving to global save lists     at {datetime.today()}\n\n")
-        # add all intermittent items to the global save lists:
-        # names
-        for i in all_names_list:
-            all_names_save_list.append(i)
-
-        # prices
-        for k in all_prices_list:
-            all_prices_save_list.append(k)
-
-        # prices quad
-        for j in all_prices_list_quad:
-            all_prices_sub_save_list.append(j)
-
-        try:
-
-            if all_names_save_list[-1] == all_names_save_list[-31]:
-                print(f"page reloaded same content, retrying")
-
-                with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                        GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-                    lf.write(f"Page reloaded same content, retrying     at {datetime.today()}... ")
-
-                return False
-
-        except IndexError:
-
-            print(f"first list, so nothing to check")
-            print("proceeding")
-
-    # "throw error" if page doesn't load
-    elif len(all_names_list) < 1:
-
-        with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-            lf.write(f"Page didn't load or empty, retrying     at {datetime.today()}... ")
-
-        print("Page didn't load or empty, trying again")
-
-        return False
-
-
-# make spreadsheet with global save lists
-# params (all names, all prices, calculate dmarket/steam arbitrage ?, sheet index)
-def make_spreadsheet_normal(an, aps, cds, si):
-    if GLOBAL_PARAM_DICT["exceptions"] is True:
-
-        print(f"Exception when getting page contents..\n"
-              f"Creating exception spreadsheet and writing to it...")
-
-        possible_spreadsheets_list.append("exception.xlsx")
-
-        exception_workbook = Workbook()
-        exception_workbook.save(possible_spreadsheets_list[-1])
-
-        si = -1
-
-        with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-            lf.write(f"Exception when getting page contents..\n"
-                     f"Creating exception spreadsheet and writing to it... "
-                     f"proceeding      at {datetime.today()}\n")
-
-    else:
-
-        if GLOBAL_PARAM_DICT["daily_save"] is True:
-
-            print(f"This is a daily save, creating new workbook\n"
-                  f"Today is the {datetime.today()}")
-
-            with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                    GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-                lf.write(f"This is a daily save ({DATE}), creating new workbook... "
-                         f"proceeding      at {datetime.today()}\n")
-
-            if ACTUAL_PARAM_LIST[0][1] == "y":
-
-                possible_spreadsheets_list.append(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[0]daily_saves\\[0-1]only_cases\\daily_save_{str(DATE)}_onlycases.xlsx")
-
-            else:
-
-                possible_spreadsheets_list.append(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[0]daily_saves\\[0-2]normal\\daily_save_{str(DATE)}.xlsx")
-
-            daily_workbook = Workbook()
-            daily_workbook.save(possible_spreadsheets_list[-1])
-
-            si = -1
-
-        else:
-
-            with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-                    GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-                lf.write(f"No exception when making workbook..\n"
-                         f"proceeding as normal with spreadsheet creation... "
-                         f"proceeding      at {datetime.today()}\n")
-
-            print(f"No exception when making workbook..\n"
-                  f"proceeding as normal with spreadsheet creation")
-
-    print(f"Making spreadsheet...")
-
-    # second translation tabel specific to this function to preserve some character
-    translation_table_for_int = dict.fromkeys(map(ord, '.,$'), None)
-
-    # load spreadsheet and format it
-    workbook = load_workbook(str(possible_spreadsheets_list[si]))
-    sheet = workbook.active
-    sheet.title = "Main"
-    sheet["A1"] = "Item name"
-    sheet.column_dimensions["A"].width = 35
-    sheet["B1"] = "Buff price"
-    sheet.column_dimensions["B"].width = 25
-    sheet["C1"] = "Cheapest price"
-    sheet.column_dimensions["C"].width = 25
-    sheet["D1"] = "Marketcap"
-    sheet.column_dimensions["D"].width = 25
-    sheet["E1"] = "Trade volume"
-    sheet.column_dimensions["E"].width = 25
-    sheet["F1"] = "estimated supply"
-    sheet.column_dimensions["F"].width = 25
-    sheet["G1"] = "gross estimated arbitrage"
-    sheet.column_dimensions["G"].width = 25
-    sheet["H1"] = "dmarket/steam arbitrage"
-    sheet.column_dimensions["H"].width = 25
-
-    row_start = 2  # start below the header row 2
-    col_start = 1  # starts from column B
-
-    print(f"adding data to spreadsheet...")
-
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-            GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-        lf.write(f"adding data rows to spreadsheet     at {datetime.today()}\n")
-
-    # add all items into the rows:
-    for i in range(0, len(an)):
-
-        # add name at current index
-        sheet.cell(row_start + i, col_start).value = an[i]
-
-        # add buff price at current index
-        sheet.cell(row_start + i, col_start + 1).value = aps[i][0]
-
-        # add cheapest price at current index
-        sheet.cell(row_start + i, col_start + 2).value = aps[i][1]
-
-        # add market-cap at current index
-        sheet.cell(row_start + i, col_start + 3).value = aps[i][2]
-
-        # add trade volume at current index
-        sheet.cell(row_start + i, col_start + 4).value = aps[i][3]
-
-        # add estimated supply at current index
-        sheet.cell(row_start + i, col_start + 5).value = str(float(aps[i][2].translate(translation_table_for_int))
-
-                                                             / float(
-
-            aps[i][1].translate(translation_table_for_int)))
-
-        # add cheapest/buff arbitrage at current index
-        sheet.cell(row_start + i, col_start + 6).value = str(round(int(aps[i][1].translate(translation_table_for_int))
-
-                                                                   / int(
-
-            aps[i][0].translate(translation_table_for_int)), 2)) + "%"
-
-        # add dmarket/steam arbitrage at current index if requested
-        if cds is True:
-
-            sheet.cell(row_start + i, col_start + 7).value = calculate_dmarket_steam_arbitrage(sn=an[i], fn=False,
-                                                                                               sf="")
-
-        else:
-            pass
-
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-            GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-        lf.write(f"saving spreadsheet (name: {possible_spreadsheets_list[si]})...\n"
-                 f"saved {len(all_names_save_list)} rows successfully to {possible_spreadsheets_list[si]}      at {datetime.today()}\n")
-
-    print(f"saving spreadsheet {possible_spreadsheets_list[si]}...")
-    print(f"saved {len(all_names_save_list)} rows successfully to {possible_spreadsheets_list[si]}")
-
-    # save spreadsheet
-    workbook.save(str(possible_spreadsheets_list[si]))
-
-    return si
-
-
-# function to print results and possible buy options to a text file
-
-def print_results(si):
-    # second translation tabel specific to this function to preserve some character
-    translation_table_for_print = dict.fromkeys(map(ord, '%'), None)
-
-    results_numbers_list = []
-    columns_list = ["A", "B", "C", "D", "E", "F", "G"]
-
-    wb = load_workbook(str(possible_spreadsheets_list[int(si)]))
-    sheet = wb.active
-
-    print(f"gathering results...")
-
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-            GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-        lf.write(f"gathering results to proceed with result print (file: ")
-
-    for i in range(2, len(all_names_save_list)):
-
-        if float(str(sheet[f"G{str(i)}"].value).translate(translation_table_for_print)) < 0.7:
-
-            results_numbers_list.append(i)
-
-        else:
-
-            pass
-
-    file_index = 0
-    i = 0
-    while not i == 20:
-
-        file_index += 1
-
-        # print(f"File index is {file_index}")
-        # print(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[{str(file_index)}].txt")
-        # print("FILE_exists?: " + str(os.path.exists(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[{str(file_index)}].txt")))
-
-        if os.path.exists(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[{str(file_index)}].txt") is True:
-
-            pass
-
-        elif os.path.exists(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[{str(file_index)}].txt") is False:
-
-            break
-
-        elif i == 20:
-
-            print(f"Aborting save to txt file. There can't be more than 20.")
-
-        i += 1
-
-    print(f"writing results to text file ")
-
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-            GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-        lf.write(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[{str(file_index)}].txt)       at {datetime.today()}\n")
-
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[{str(file_index)}].txt", "x") as rf:
-
-        rf.write(f"Results file for search on {str(DATETIME)} with search params:\n\n")
-
-        for i in range(0, len(PARAMS_LIST) - 1):
-            rf.write(f"{str(PARAMS_LIST[i])} --- {str(ACTUAL_PARAM_LIST[0][i])}\n")
-
-        rf.write("\n")
-        curr_option_index = 1
-
-        for i in results_numbers_list:
-
-            helper_result_list = []
-
-            for k in columns_list:
-                helper_result_list.append(str(sheet[f"{str(k)}{str(i)}"].value))
-
-            print(f"Option {str(curr_option_index)}: {str(helper_result_list)}")
-
-            rf.write(f"Option {str(curr_option_index)}: {str(helper_result_list[0])}:\n"
-                     f" -buff price: {helper_result_list[1]}\n"
-                     f" -cheapest price: {helper_result_list[2]}\n"
-                     f" -market-cap: {helper_result_list[3]}\n"
-                     f" -trade volume: {helper_result_list[4]}\n"
-                     f" -estimated supply: {helper_result_list[5]}\n"
-                     f" -gross estimated arbitrage: {helper_result_list[6]}\n"
-                     f"\n")
-
-            curr_option_index += 1
-
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-            GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
-
-        lf.write(f"Successfully wrote to result file     at {datetime.today()}\n")
+    lf.write(f"Params assigned at {datetime.today()}: \n\n")
+
+    for i in PARAMS_DICT:
+        lf.write(f"{str(i)} --- {str(PARAMS_DICT[i])}\n")
+    lf.write("\n")
 
 
 # possible function to use selenium with proxy:
@@ -935,8 +881,9 @@ def extract_steam_data(cts):
 
 
 # start main function for testing
-
-main(LOG_FILE_INDEX)
+with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
+        GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
+    main()
 
 # calculate_dmarket_steam_arbitrage("AWP | Asiimov (Field-Tested)", False, "")
 
