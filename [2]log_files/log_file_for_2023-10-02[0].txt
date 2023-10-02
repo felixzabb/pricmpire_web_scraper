@@ -1,0 +1,41 @@
+Log file 0 for normal run
+Starting log at 2023-10-02 13:39:38.281735
+Params assigned at 2023-10-02 13:39:41.286367: 
+
+daily_save --- n
+only_cases --- y
+limit --- 1000000
+sort --- marketcap
+order --- :DESC
+blacklist --- hardened
+search --- case
+iterations --- 2
+calc_dmarket_steam --- n
+
+accessed website (https://pricempire.com/trending?to=1000000&sort=marketcap:DESC&blacklist=hardened&search=case)     at 2023-10-02 13:39:49.725240
+Getting Page (1) contents...       at 2023-10-02 13:39:59.735059... SUCCESSFUL     at 2023-10-02 13:40:00.329056
+setting up extraction objects     at 2023-10-02 13:40:00.329056
+Extracted data for current page:      at 2023-10-02 13:40:00.410058
+
+all names: ['Operation Breakout Weapon Case', 'CS:GO Weapon Case', 'Glove Case', 'Operation Bravo Case', 'Operation Phoenix Weapon Case', 'Operation Broken Fang Case', 'Chroma 3 Case', 'Chroma 2 Case', 'Shattered Web Case', 'Gamma 2 Case', 'Spectrum 2 Case', 'Gamma Case', 'Dreams & Nightmares Case', 'Revolver Case', 'Operation Riptide Case', 'Fracture Case', 'Clutch Case', 'Operation Hydra Case', 'Spectrum Case', 'Revolution Case', 'Huntsman Weapon Case', 'Prisma 2 Case', 'Danger Zone Case', 'eSports 2013 Winter Case', 'Prisma Case', 'Operation Wildfire Case', 'Chroma Case', 'Snakebite Case', 'CS:GO Weapon Case 2', 'eSports 2014 Summer Case']
+all prices: ['$5.41', '$4.76', '$367,367.28', '$0', '$76.02', '$72.23', '$298,020.98', '$0', '$4.29', '$3.79', '$287,039.44', '$0', '$40.07', '$40.07', '$174,024.01', '$0', '$2.71', '$2.61', '$156,709.62', '$0', '$3.47', '$3.34', '$154,505.06', '$0', '$1.99', '$1.88', '$141,248.16', '$0', '$2.26', '$2.18', '$141,224.76', '$0', '$3.16', '$3.16', '$135,402.84', '$0', '$2.05', '$1.84', '$134,204.08', '$0', '$1.40', '$1.35', '$125,667.45', '$0', '$2.14', '$1.82', '$122,668.00', '$0', '$1.03', '$0.95', '$122,658.30', '$0', '$1.49', '$1.38', '$113,878.98', '$0', '$4.40', '$4.40', '$110,730.40', '$0', '$0.49', '$0.48', '$109,625.76', '$0', '$0.60', '$0.56', '$108,212.72', '$0', '$20.05', '$19.50', '$94,555.50', '$0', '$1.93', '$1.87', '$89,503.81', '$0', '$0.98', '$0.93', '$87,920.34', '$0', '$7.74', '$7.74', '$80,310.24', '$0', '$0.63', '$0.55', '$75,482.00', '$0', '$0.60', '$0.50', '$69,288.50', '$0', '$6.63', '$6.21', '$60,398.46', '$0', '$0.57', '$0.45', '$57,472.20', '$0', '$1.71', '$1.50', '$56,029.50', '$0', '$2.41', '$2.27', '$50,979.66', '$0', '$0.27', '$0.24', '$46,796.40', '$0', '$11.35', '$11.28', '$45,898.32', '$0', '$6.01', '$5.62', '$42,206.20', '$0']
+all prices in quad: [['$5.41', '$4.76', '$367,367.28', '$0'], ['$76.02', '$72.23', '$298,020.98', '$0'], ['$4.29', '$3.79', '$287,039.44', '$0'], ['$40.07', '$40.07', '$174,024.01', '$0'], ['$2.71', '$2.61', '$156,709.62', '$0'], ['$3.47', '$3.34', '$154,505.06', '$0'], ['$1.99', '$1.88', '$141,248.16', '$0'], ['$2.26', '$2.18', '$141,224.76', '$0'], ['$3.16', '$3.16', '$135,402.84', '$0'], ['$2.05', '$1.84', '$134,204.08', '$0'], ['$1.40', '$1.35', '$125,667.45', '$0'], ['$2.14', '$1.82', '$122,668.00', '$0'], ['$1.03', '$0.95', '$122,658.30', '$0'], ['$1.49', '$1.38', '$113,878.98', '$0'], ['$4.40', '$4.40', '$110,730.40', '$0'], ['$0.49', '$0.48', '$109,625.76', '$0'], ['$0.60', '$0.56', '$108,212.72', '$0'], ['$20.05', '$19.50', '$94,555.50', '$0'], ['$1.93', '$1.87', '$89,503.81', '$0'], ['$0.98', '$0.93', '$87,920.34', '$0'], ['$7.74', '$7.74', '$80,310.24', '$0'], ['$0.63', '$0.55', '$75,482.00', '$0'], ['$0.60', '$0.50', '$69,288.50', '$0'], ['$6.63', '$6.21', '$60,398.46', '$0'], ['$0.57', '$0.45', '$57,472.20', '$0'], ['$1.71', '$1.50', '$56,029.50', '$0'], ['$2.41', '$2.27', '$50,979.66', '$0'], ['$0.27', '$0.24', '$46,796.40', '$0'], ['$11.35', '$11.28', '$45,898.32', '$0'], ['$6.01', '$5.62', '$42,206.20', '$0']]
+saving to global save lists     at 2023-10-02 13:40:00.410058
+
+Getting Page (2) contents...       at 2023-10-02 13:40:10.658531... SUCCESSFUL     at 2023-10-02 13:40:10.800517
+setting up extraction objects     at 2023-10-02 13:40:10.800517
+Extracted data for current page:      at 2023-10-02 13:40:10.817518
+
+all names: ['Recoil Case', 'Horizon Case', 'Operation Vanguard Weapon Case', 'CS:GO Weapon Case 3', 'CS20 Case', 'eSports 2013 Case', 'Shadow Case', 'Falchion Case', 'Winter Offensive Weapon Case']
+all prices: ['$0.41', '$0.39', '$41,893.80', '$0', '$0.70', '$0.66', '$38,366.46', '$0', '$2.18', '$2.05', '$38,220.20', '$0', '$6.88', '$6.88', '$36,663.52', '$0', '$0.60', '$0.53', '$35,747.44', '$0', '$33.97', '$33.97', '$31,694.01', '$0', '$0.82', '$0.73', '$26,765.45', '$0', '$0.80', '$0.68', '$24,019.64', '$0', '$5.14', '$4.87', '$23,341.91', '$0']
+all prices in quad: [['$0.41', '$0.39', '$41,893.80', '$0'], ['$0.70', '$0.66', '$38,366.46', '$0'], ['$2.18', '$2.05', '$38,220.20', '$0'], ['$6.88', '$6.88', '$36,663.52', '$0'], ['$0.60', '$0.53', '$35,747.44', '$0'], ['$33.97', '$33.97', '$31,694.01', '$0'], ['$0.82', '$0.73', '$26,765.45', '$0'], ['$0.80', '$0.68', '$24,019.64', '$0'], ['$5.14', '$4.87', '$23,341.91', '$0']]
+saving to global save lists     at 2023-10-02 13:40:10.817518
+
+No exception when making workbook..
+proceeding as normal with spreadsheet creation... proceeding      at 2023-10-02 13:40:26.229476
+adding data rows to spreadsheet     at 2023-10-02 13:40:26.249480
+saving spreadsheet (name: C:\Users\felix_a0jy\PycharmProjects\pricempire_scraper\[3]any_run_saves\onlycases.xlsx)...
+saved 39 rows successfully to C:\Users\felix_a0jy\PycharmProjects\pricempire_scraper\[3]any_run_saves\onlycases.xlsx      at 2023-10-02 13:40:26.251481
+completed program without errors at 2023-10-02 13:40:26.286479
+gathering results to proceed with result print (file: C:\Users\felix_a0jy\PycharmProjects\pricempire_scraper\[1]result_files\results_for_2023-10-02[1].txt)       at 2023-10-02 13:40:26.305487
+Successfully wrote to result file     at 2023-10-02 13:40:26.306481
