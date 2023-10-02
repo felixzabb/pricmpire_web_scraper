@@ -21,7 +21,7 @@ possible_spreadsheets_list = ["C:\\Users\\felix_a0jy\\PycharmProjects\\pricempir
                               "C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[3]any_run_saves\\onlycases.xlsx"]
 
 # dictionary's and lists for global item accessibility
-GLOBAL_PARAM_DICT = {"website_url": "", "no_content_exception": False, "daily_save": False, "log_file_index": 0, "results_file_index": 0, "sheet_index": 0}
+GLOBAL_PARAM_DICT = {"website_url": "", "no_content_exception": False, "daily_save": False, "log_file_index": 0, "result_file_index": 0, "sheet_index": 0}
 PARAMS_DICT = {"daily_save": "n", "only_cases": "n", "limit": 1000000, "sort": "marketcap", "order": ":DESC", "blacklist": "", "search": "", "iterations": 5, "calc_dmarket_steam": "n"}
 
 # global values
@@ -50,17 +50,13 @@ def main():
     # adds log text 1 (start time of log)
     lf.write(f"Log file " + str(GLOBAL_PARAM_DICT["log_file_index"]) + f" for normal run\n"
                                                                        f"Starting log at {datetime.today()}\n")
-    # gets file index for log file
-    get_save_file_index(file_path=str(LOG_PATH), global_param_name="log_file_index")
-
-    # gets result file index
-    get_save_file_index(file_path=str(RESULTS_PATH), global_param_name="results_file_index")
 
     # collect all params
     get_params()
 
     # assigns website url
-    GLOBAL_PARAM_DICT["website_url"] = "https://pricempire.com/trending?to={}&sort={}{}&blacklist={}&search={}".format(int(PARAMS_DICT["limit"]), str(PARAMS_DICT["sort"]), str(PARAMS_DICT["order"]),
+    GLOBAL_PARAM_DICT["website_url"] = "https://pricempire.com/trending?to={}&sort={}{}&blacklist={}&search={}".format(int(PARAMS_DICT["limit"]), str(PARAMS_DICT["sort"]),
+                                                                                                                       str(PARAMS_DICT["order"]),
                                                                                                                        str(PARAMS_DICT["blacklist"]), str(PARAMS_DICT["search"]))
     # catches errors to put in the log file
     try:
@@ -78,7 +74,6 @@ def main():
 
         # prints results if requested
         if print_results_yn == "y":
-
             print_results()
 
         # adds log text 3 (program success (if succeeded)
@@ -467,9 +462,9 @@ def print_results():
             pass
 
     lf.write(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(
-        GLOBAL_PARAM_DICT["results_file_index"]) + f"].txt)       at {datetime.today()}\n")
+        GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt)       at {datetime.today()}\n")
 
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["results_file_index"]) + f"].txt", "x") as rf:
+    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt", "x") as rf:
 
         rf.write(f"Results file for search on {str(DATETIME)} with search params:\n\n")
 
@@ -506,13 +501,13 @@ def print_results():
     lf.write(f"Successfully wrote to result file     at {datetime.today()}\n")
 
 
-def get_save_file_index(file_path, global_param_name):
+def get_file_index(file_path, global_param_name):
 
     # creating error list index
     i = 0
     lfi = 0
 
-    while not i == 21:  # 21 because there can be only 20 log files per day. Function searches which log file names already exist and takes one which doesn't
+    while not i == 21:  # 21 because there can be only 20 log files per day. Function searches which log file names already exist and takes one which doesn'
 
         if os.path.exists(f"{str(file_path)}{str(DATE)}[{str(lfi)}].txt") is False:
 
@@ -843,10 +838,20 @@ def extract_steam_data(cts):
     return float(all_steam_prices_list[0])
 
 
-# start main function for testing
+# start main function for testing (CURRENT SOLUTION)
+
+# get log file index
+get_file_index(file_path=str(LOG_PATH), global_param_name="log_file_index")
+
+# get result file index
+get_file_index(file_path=str(RESULTS_PATH), global_param_name="result_file_index")
+
+# open the log file now to ease future logging
 with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
         GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
+
     main()
+
 
 # calculate_dmarket_steam_arbitrage("AWP | Asiimov (Field-Tested)", False, "")
 
