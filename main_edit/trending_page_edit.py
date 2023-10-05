@@ -17,8 +17,8 @@ ALL_PRICES_SAVE_LIST = []
 ALL_PRICES_QUAD_SAVE_LIST = []
 
 # list with premade file names (expandable)
-possible_spreadsheets_list = ["C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[3]any_run_saves\\webscraper_test.xlsx",
-                              "C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[3]any_run_saves\\onlycases.xlsx"]
+possible_spreadsheets_list = ["C:\\Users\\Public\\pricempire_web_scraper\\[3]any_run_saves\\normal_run_save_file.xlsx",
+                              "C:\\Users\\Public\\pricempire_web_scraper\\[3]any_run_saves\\onlycases_run_save_file.xlsx"]
 
 # dictionary's and lists for global item accessibility
 GLOBAL_PARAM_DICT = {"website_url": "", "no_content_exception": False, "daily_save": False, "log_file_index": 0, "result_file_index": 0, "sheet_index": 0}
@@ -35,29 +35,31 @@ DATETIME = datetime.today()
 DATE = date.today()
 
 # paths
-LOG_PATH = "C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_"
-RESULTS_PATH = "C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_"
+LOG_PATH = "C:\\Users\\Public\\pricempire_web_scraper\\[2]log_files\\log_file_for_"
+RESULTS_PATH = "C:\\Users\\Public\\pricempire_web_scraper\\[1]result_files\\results_for_"
 
 
 # FUNCTIONS...................................
 
-# / main function:
-# params(log file index)
-#
-# \#
+# main function:
 def main():
 
     # adds log text 1 (start time of log)
     lf.write(f"Log file " + str(GLOBAL_PARAM_DICT["log_file_index"]) + f" for normal run\n"
-                                                                       f"Starting log at {datetime.today()}\n")
+                                                                       f"at {datetime.today()}|: Starting log\n")
+
+    # offer explanation
+    starting_explanaition()
 
     # collect all params
     get_params()
 
     # assigns website url
-    GLOBAL_PARAM_DICT["website_url"] = "https://pricempire.com/trending?to={}&sort={}{}&blacklist={}&search={}".format(int(PARAMS_DICT["limit"]), str(PARAMS_DICT["sort"]),
+    GLOBAL_PARAM_DICT["website_url"] = "https://pricempire.com/trending?to={}&sort={}{}&blacklist={}&search={}".format(int(PARAMS_DICT["limit"]),
+                                                                                                                       str(PARAMS_DICT["sort"]),
                                                                                                                        str(PARAMS_DICT["order"]),
-                                                                                                                       str(PARAMS_DICT["blacklist"]), str(PARAMS_DICT["search"]))
+                                                                                                                       str(PARAMS_DICT["blacklist"]),
+                                                                                                                       str(PARAMS_DICT["search"]))
     # catches errors to put in the log file
     try:
 
@@ -71,20 +73,24 @@ def main():
 
         # assigns the print results parameter
         print_results_yn = input("Print result text file? (y/n) ").lower()  # decides if program should make a spreadsheet with all the data
+        while print_results_yn not in ("", "y", "n"):
+
+            print("Please enter a valid parameter: (y/n) or just hit enter!")
+            print_results_yn = input("Print result text file? (y/n) ").lower()
 
         # prints results if requested
         if print_results_yn == "y":
             print_results()
 
         # adds log text 3 (program success (if succeeded)
-        lf.write(f"completed program without errors at {datetime.today()}\n")
+        lf.write(f"at {datetime.today()}|: completed program without errors\n")
 
     except Exception as e:
 
         print(f"Error when running program")
 
         # adds log text 5 (program unsuccessful(if unsuccessful))
-        lf.write(f"did not complete program regularly     at {datetime.today()}\n")
+        lf.write(f"at {datetime.today()}|: did not complete program regularly\n")
         lf.write(f"error was: {str(e)}\n")
 
         print(e)
@@ -114,7 +120,7 @@ def get_html():
         print("Button not found")
 
     # adds to log 5 (accessed website)
-    lf.write(f"accessed website ({accessed_website})     at {datetime.today()}\n")
+    lf.write(f"at {datetime.today()}|: accessed website ({accessed_website})\n")
 
     # page load time:
     time.sleep(WAIT_TIME)
@@ -125,7 +131,7 @@ def get_html():
         print(f"Getting Page ({i + 1}) contents...")
 
         # adds to log 6 (confirmation for getting page contents)
-        lf.write(f"Getting Page ({i + 1}) contents...       at {datetime.today()}... ")
+        lf.write(f"at {datetime.today()}|: Getting Page ({i + 1}) contents... ")
 
         # get the contents and start the extraction function
         try:
@@ -139,8 +145,8 @@ def get_html():
             if extract_data(contents) is False:  # if fails, reload page then try again
 
                 # adds to log 7 (unsuccessful extraction)
-                lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
-                lf.write(f"attempting to reload page...     at {datetime.today()}... ")
+                lf.write(f"UNSUCCESSFUL\n")
+                lf.write(f"at {datetime.today()}|: attempting to reload page... ")
 
                 # reload page and wait for page load longer this time:
                 driver.refresh()
@@ -155,12 +161,18 @@ def get_html():
                 if extract_data(contents_reload) is False:  # try to access next page by link
 
                     # adds to log 8 (unsuccessful extraction)
-                    lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
-                    lf.write(f"attempting to skip to next page...     at {datetime.today()}... ")
+                    lf.write(f"UNSUCCESSFUL\n")
+                    lf.write(f"at {datetime.today()}|: attempting to skip to next page... ")
 
                     print(f"attempting to skip to next page... ")
 
-                    # go to page by url and wait for page load
+                    # close and reopen driver go to page by url and wait for page load
+
+                    driver.quit()
+                    time.sleep(60)
+
+                    # maybe add to try other browser
+                    driver = webdriver.Edge()
                     driver.get(str(GLOBAL_PARAM_DICT["website_url"]) + str(f"&page={str(i)}"))
                     time.sleep(WAIT_TIME + 10)
 
@@ -169,8 +181,8 @@ def get_html():
 
                     if extract_data(contents_reload_2) is False:
 
-                        lf.write(f"UNSUCCESSFUL     at {datetime.today()}\n")
-                        lf.write(f"aborting and saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))})     at {datetime.today()}\n")
+                        lf.write(f"UNSUCCESSFUL\n")
+                        lf.write(f"at {datetime.today()}|: aborting and saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))})\n")
 
                         print(f"Something broke, saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))}) and aborting")
 
@@ -204,8 +216,8 @@ def get_html():
 # params (html contents of page)
 def extract_data(content):
 
-    lf.write(f"SUCCESSFUL     at {datetime.today()}\n")
-    lf.write(f"setting up extraction objects     at {datetime.today()}\n")
+    lf.write(f"SUCCESSFUL\n")
+    lf.write(f"at {datetime.today()}|: setting up extraction objects\n")
 
     print(f"Setting up extraction objects...\n")
 
@@ -241,7 +253,7 @@ def extract_data(content):
         all_prices_list_quad.append([all_prices_list[i], all_prices_list[(i + 1)],
                                      all_prices_list[(i + 2)], all_prices_list[(i + 3)]])
 
-    lf.write(f"Extracted data for current page:      at {datetime.today()}\n\n")
+    lf.write(f"at {datetime.today()}|: Extracted data for current page:\n\n")
     lf.write(f"all names: {all_names_list}\n")
     lf.write(f"all prices: {all_prices_list}\n")
     lf.write(f"all prices in quad: {all_prices_list_quad}\n")
@@ -264,7 +276,7 @@ def extract_data(content):
 
         print(f"saving to global save lists...")
 
-        lf.write(f"saving to global save lists     at {datetime.today()}\n\n")
+        lf.write(f"at {datetime.today()}|: saving to global save lists\n\n")
 
         # names
         for i in all_names_list:
@@ -283,7 +295,7 @@ def extract_data(content):
             if ALL_NAMES_SAVE_LIST[-1] == ALL_NAMES_SAVE_LIST[-31]:
                 print(f"page reloaded same content, retrying")
 
-                lf.write(f"Page reloaded same content, retrying     at {datetime.today()}... ")
+                lf.write(f"at {datetime.today()}|: Page reloaded same content, retrying... ")
 
                 return False
 
@@ -295,7 +307,7 @@ def extract_data(content):
     # "throw error" if page doesn't load
     elif len(all_names_list) < 1:
 
-        lf.write(f"Page didn't load or empty, retrying     at {datetime.today()}... ")
+        lf.write(f"at {datetime.today()}|: Page didn't load or empty, retrying... ")
 
         print("Page didn't load or empty, trying again")
 
@@ -311,7 +323,7 @@ def make_spreadsheet_normal():
         print(f"Exception when getting page contents..\n"
               f"Creating exception spreadsheet and writing to it...")
 
-        possible_spreadsheets_list.append("exception.xlsx")
+        possible_spreadsheets_list.append("C:\\Users\\Public\\pricempire_web_scraper\\[4]exception_run_saves\\exception_run_save.xlsx")
 
         exception_workbook = Workbook()
         exception_workbook.save(possible_spreadsheets_list[-1])
@@ -319,9 +331,9 @@ def make_spreadsheet_normal():
         # assign proper sheet index
         GLOBAL_PARAM_DICT["sheet_index"] = -1
 
-        lf.write(f"Exception when getting page contents..\n"
-                 f"Creating exception spreadsheet and writing to it... "
-                 f"proceeding      at {datetime.today()}\n")
+        lf.write(f"at {datetime.today()}|: Exception when getting page contents..\n"
+                 f"at {datetime.today()}|: Creating exception spreadsheet and writing to it... "
+                 f"proceeding\n")
 
     else:
 
@@ -330,29 +342,29 @@ def make_spreadsheet_normal():
             print(f"This is a daily save, creating new workbook\n"
                   f"Today is the {datetime.today()}")
 
-            lf.write(f"This is a daily save ({DATE}), creating new workbook... "
-                     f"proceeding      at {datetime.today()}\n")
+            lf.write(f"at {datetime.today()}|: This is a daily save ({DATE}), creating new workbook... "
+                     f"proceeding\n")
 
             if str(PARAMS_DICT["only_cases"]) == "y":
 
-                possible_spreadsheets_list.append(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[0]daily_saves\\[0-1]only_cases\\daily_save_{str(DATE)}_onlycases.xlsx")
+                possible_spreadsheets_list.append(f"C:\\Users\\Public\\pricempire_web_scraper\\[0]daily_saves\\[0-1]only_cases\\daily_save_{str(DATE)}_onlycases.xlsx")
 
             else:
 
-                possible_spreadsheets_list.append(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[0]daily_saves\\[0-2]normal\\daily_save_{str(DATE)}.xlsx")
+                possible_spreadsheets_list.append(f"C:\\Users\\Public\\pricempire_web_scraper\\[0]daily_saves\\[0-2]normal\\daily_save_{str(DATE)}.xlsx")
 
             daily_workbook = Workbook()
             daily_workbook.save(possible_spreadsheets_list[-1])
 
-            lf.write(f"created and saved workbook successfully (name: {str(possible_spreadsheets_list[-1])})     at {datetime.today()}\n")
+            lf.write(f"at {datetime.today()}|: created and saved workbook successfully (name: {str(possible_spreadsheets_list[-1])})\n")
 
             GLOBAL_PARAM_DICT["sheet_index"] = -1
 
         else:
 
-            lf.write(f"No exception when making workbook..\n"
-                     f"proceeding as normal with spreadsheet creation... "
-                     f"proceeding      at {datetime.today()}\n")
+            lf.write(f"at {datetime.today()}|: No exception when making workbook..\n"
+                     f"at {datetime.today()}|: proceeding as normal with spreadsheet creation... "
+                     f"proceeding\n")
 
             print(f"No exception when making workbook..\n"
                   f"proceeding as normal with spreadsheet creation")
@@ -388,7 +400,7 @@ def make_spreadsheet_normal():
 
     print(f"adding data to spreadsheet...")
 
-    lf.write(f"adding data rows to spreadsheet     at {datetime.today()}\n")
+    lf.write(f"at {datetime.today()}|: adding data rows to spreadsheet\n")
 
     # add all items into the rows:
     for i in range(0, len(ALL_NAMES_SAVE_LIST)):
@@ -425,8 +437,8 @@ def make_spreadsheet_normal():
 
     si = int(GLOBAL_PARAM_DICT["sheet_index"])  # current solution
 
-    lf.write(f"saving spreadsheet (name: {possible_spreadsheets_list[si]})...\n"
-             f"saved {len(ALL_NAMES_SAVE_LIST)} rows successfully to {possible_spreadsheets_list[si]}      at {datetime.today()}\n")
+    lf.write(f"at {datetime.today()}|: saving spreadsheet (name: {possible_spreadsheets_list[si]})...\n"
+             f"at {datetime.today()}|: saved {len(ALL_NAMES_SAVE_LIST)} rows successfully to {possible_spreadsheets_list[si]}")
 
     print(f"saving spreadsheet {possible_spreadsheets_list[si]}...")
     print(f"saved {len(ALL_NAMES_SAVE_LIST)} rows successfully to {possible_spreadsheets_list[si]}")
@@ -461,10 +473,10 @@ def print_results():
 
             pass
 
-    lf.write(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(
-        GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt)       at {datetime.today()}\n")
+    lf.write(f"at {datetime.today()}|: created result file (name: C:\\Users\\Public\\pricempire_web_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(
+        GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt)\n")
 
-    with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt", "x") as rf:
+    with open(f"C:\\Users\\Public\\pricempire_web_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt", "x", encoding="utf-8") as rf:
 
         rf.write(f"Results file for search on {str(DATETIME)} with search params:\n\n")
 
@@ -498,7 +510,54 @@ def print_results():
 
             rf.write(f"No options available right now\n")
 
-    lf.write(f"Successfully wrote to result file     at {datetime.today()}\n")
+    lf.write(f"at {datetime.today()}|: Successfully wrote to result file\n")
+
+
+def starting_explanaition():
+
+    print("PRICEMPIRE-WEB-SCRAPER by Felix Zabudkin \n")
+
+    show_explanation = input("Do you want to see a explanation for each parameter? (y/n) ").lower()
+    while show_explanation not in ("", "y", "n"):
+        print("Please enter a valid parameter: (y/n) or just hit enter!")
+        show_explanation = input("Do you want to see a explanation for each parameter? (y/n) ").lower()
+
+    if show_explanation == "y":
+
+        print(f"\n"
+              f"1. only cases --- decides if search should only be for cases (options: y/n) \n"
+              f"2. daily save --- decides if search should be saved as a daily save (options: y/n) \n"
+              f"3. limit --- decides what the price limit should be (options: any positive integer) \n"
+              f"4. sort --- decides how the items should be sorted (options: buff, cheapest, marketcap, tradevolume) \n"
+              f"5. order --- decides if items should be sorted ascending or descending (options: y/n) \n"
+              f"6. blacklist --- decides which items or chars should be blacklisted from the search (options: any char or string) NOTE: this parameter will not always be shown \n"
+              f"7. search --- decides if program should search for a specific string or char (options: any char or string)  NOTE: this parameter will not always be shown \n"
+              f"8. cds --- decides if program should add the dmarket/steam market-price-difference respectively arbitrage to the save file (options: y/n) NOTE: this feature is still in work, so a y won't do anything \n"
+              f"9. print results -- decides if a result file with buy options should be made (options: y/n) \n"
+              f"\n"
+              f"You have the option to just press enter for every parameter and the respective value will be the default. \n")
+
+        show_default_param_values = input("Show default parameter values? (y/n) ").lower()
+        while show_default_param_values not in ("", "y", "n"):
+            print("Please enter a valid parameter: (y/n) or just hit enter!")
+            show_default_param_values = input("Show default parameter values? (y/n) ").lower()
+
+        if show_default_param_values == "y":
+            print(f"\n"
+                  f"default for... \n"
+                  f"    -only cases ->  n \n"
+                  f"    -daily save -> n \n"
+                  f"    -limit -> 1000000 \n"
+                  f"    -sort -> marketcap \n"
+                  f"    -order -> descending \n"
+                  f"    -blacklist -> NULL \n"
+                  f"    -search -> NULL\n"
+                  f"    -cds -> n \n")
+
+            start_it = input("Press Enter to continue")
+
+    print("Starting program... \n\n")
+    print("Please select your parameters.")
 
 
 def get_file_index(file_path, global_param_name):
@@ -524,10 +583,34 @@ def get_params():
 
     # parameters:
     only_cases = input("Search only for cases? (y/n) ").lower()  # decides if to only search for cases or not
-    daily_save = input("Is this a daily save for historical data? (y/n) ")  # decides if run is treated as daily safe
+    while only_cases not in ("", "y", "n"):
+
+        print("Please enter a valid parameter: (y/n) or just hit enter!")
+        only_cases = input("Search only for cases? (y/n) ").lower()
+
+    daily_save = input("Is this a daily save for historical data? (y/n) ").lower()  # decides if run is treated as daily safe
+    while daily_save not in ("", "y", "n"):
+
+        print("Please enter a valid parameter: (y/n) or just hit enter!")
+        daily_save = input("Is this a daily save for historical data? (y/n) ").lower()
+
     limit = input("Price limit? (integer) ").lower()  # decides the price limit of the search
+    while isinstance(limit, int) is False and not limit == "":
+
+        print("Please enter a valid parameter: (ANY INTEGER) or just hit enter!")
+        limit = input("Price limit? (integer) ").lower()
+
     sort = input("Sort by ...? (buff, cheapest, marketcap, tradevolume) ").lower()  # decides how the search items are sorted
+    while sort not in ("", "buff", "cheapest", "marketcap", "tradevolume"):
+
+        print("Please enter a valid parameter: (buff, cheapest, marketcap, tradevolume) or just hit enter!")
+        sort = input("Sort by ...? (buff, cheapest, marketcap, tradevolume) ").lower()
+
     order = input("Sort ascending or descending? (a/d) ").lower()  # decides if search items are ASC or DESC
+    while order not in ("", "a", "d"):
+
+        print("Please enter a valid parameter: (a/d) or just hit enter!")
+        order = input("Sort ascending or descending? (a/d) ").lower()
 
     if only_cases == "" or only_cases == "n":
 
@@ -537,6 +620,10 @@ def get_params():
 
         blacklist = "hardened"
 
+    else:
+
+        blacklist = ""
+
     if only_cases == "" or only_cases == "n":
 
         search = input("Search for (a) specific item/s: ").lower()  # takes specific search arguments
@@ -544,6 +631,10 @@ def get_params():
     elif only_cases == "y":
 
         search = "case"
+
+    else:
+
+        search = ""
 
     if only_cases == "" or only_cases == "n":
 
@@ -554,12 +645,20 @@ def get_params():
         else:
 
             iterations = input("How many pages to scrape? ").lower()  # decides how many pages will be scraped
+            while isinstance(int(iterations), int) is False:  # currently not working
+
+                print("Please enter a valid parameter: (ANY INTEGER) or just hit enter!")
+                iterations = input("How many pages to scrape? ").lower()
 
     else:
 
         iterations = ""
 
-    calc_dmarket_steam = input("Calculate dmarket/steam arbitrage? It takes long. (y/n) ")  # decides if the dmarket/steam arbitrage should be calculated for each item
+    calc_dmarket_steam = input("Calculate dmarket/steam arbitrage? It takes long. (y/n) ").lower()  # decides if the dmarket/steam arbitrage should be calculated for each item
+    while calc_dmarket_steam not in ("", "y", "n"):
+
+        print("Please enter a valid parameter: (y/n) or just hit enter!")
+        calc_dmarket_steam = input("Calculate dmarket/steam arbitrage? It takes long. (y/n) ").lower()
 
     # default params:
 
@@ -591,7 +690,7 @@ def get_params():
 
         elif daily_save == "y":
 
-            iterations = 694
+            iterations = 715
 
         else:
 
@@ -621,7 +720,8 @@ def get_params():
         GLOBAL_PARAM_DICT["sheet_index"] = 0
 
     # print all info
-    print(f"\nonly cases: {only_cases}\n"
+    print(f"\n"
+          f"only cases: {only_cases}\n"
           f"limit: {limit}\n"
           f"sorting: {sort}\n"
           f"ordering: {order}\n"
@@ -645,7 +745,7 @@ def get_params():
     PARAMS_DICT["calc_dmarket_steam"] = calc_dmarket_steam
 
     # adds log text 2 (all params)
-    lf.write(f"Params assigned at {datetime.today()}: \n\n")
+    lf.write(f"at {datetime.today()}|: Params assigned\n\n")
 
     for i in PARAMS_DICT:
         lf.write(f"{str(i)} --- {str(PARAMS_DICT[i])}\n")
@@ -847,7 +947,7 @@ get_file_index(file_path=str(LOG_PATH), global_param_name="log_file_index")
 get_file_index(file_path=str(RESULTS_PATH), global_param_name="result_file_index")
 
 # open the log file now to ease future logging
-with open(f"C:\\Users\\felix_a0jy\\PycharmProjects\\pricempire_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
+with open(f"C:\\Users\\Public\\pricempire_web_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
         GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
 
     main()
