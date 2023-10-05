@@ -6,7 +6,7 @@ Why even use this Program?
 - Gives you a faster way to gather much information
 
 
-Features:
+Features:\n
 -[SCRAPING]
   - scraping of name, buff price, cheapest price, market-cap, estimated supply and trade volume data points
     
