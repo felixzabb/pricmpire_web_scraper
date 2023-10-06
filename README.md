@@ -44,6 +44,7 @@ Roadmap:
 -[CUSTOMIZABILITY]
 
   - custom default parameters
+  - option to toggle log file creation off
 
   -------
   - "First release" (basically when the project is good enough to be actually viable)
