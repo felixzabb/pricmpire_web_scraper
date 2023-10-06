@@ -1,5 +1,5 @@
 # pricmpire_web_scraper
-This is a programm, which scrapes the website "pricempire.com" for price data of all their items on the trending page.
+This is a program, which scrapes the website "pricempire.com" for price data of all their CS2 items on the trending page.
 
 
 Why even use this Program?
