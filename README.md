@@ -41,6 +41,10 @@ Roadmap:
 -[BUGS]
   - fixing them
 
+-[CUSTOMIZABILITY]
+
+  - custom default parameters
+
   -------
   - "First release" (basically when the project is good enough to be actually viable)
   - maybe conversion to executable
