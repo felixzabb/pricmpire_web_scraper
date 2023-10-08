@@ -4,7 +4,7 @@ This is a program, which scrapes the website "pricempire.com" for price data of 
 
 Why even use this Program?
 
--Reliefs you of the pain of paying a 100$ every month just to get acces to Pricempires API.
+- Reliefs you of the pain of paying a 100$ every month just to get acces to Pricempires API.
 - Gives you a faster way to gather much information
 
 
