@@ -50,7 +50,7 @@ Roadmap:
 
 -[CUSTOMIZABILITY]
 
-  - custom default parameters
+  - custom default parameters (completed 10. October 2023)
   - option to toggle log file creation off
 
   -------
