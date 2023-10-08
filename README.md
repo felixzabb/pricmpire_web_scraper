@@ -11,21 +11,25 @@ Why even use this Program?
 Features:
 
 -[SCRAPING]
+
   - scraping of name, buff price, cheapest price, market-cap, estimated supply and trade volume data points
     
 -[DATA]:
+
   - data saves in spreadsheets
   - daily saves for historical data
   - print out to terminal/console
   - result file creation (profitable buy options)
     
-  -[CUSTOMIZABILITY]
-    - takes in many paramaters (see in line ---)
+-[CUSTOMIZABILITY]
+  
+  - takes in many paramaters (see in line ---)
 
 Roadmap:
 
 -[DATA]
-  - custom aritrage factor for result files
+
+  - custom arbitrage factor for result files (completed 10. October 2023)
   - custom save file creation
   - currency conversion
   - scraping of pop, 24h, 7d, 30d, 60d price/popularity increases/decreases and 30d trades values
@@ -33,12 +37,15 @@ Roadmap:
   - checking for manipulation e.g. very high arbitrage because of fake list prices 
 
 -[EXPERIENCE]
+
   - simple ui option instead of console one
 
 -[DOCUMENTAION]
+
   - better documentation
 
 -[BUGS]
+
   - fixing them
 
 -[CUSTOMIZABILITY]
