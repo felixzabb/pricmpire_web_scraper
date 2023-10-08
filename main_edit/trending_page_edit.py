@@ -8,6 +8,7 @@ import time
 from selenium.webdriver.common.by import By
 from datetime import datetime, date
 import os
+import json
 
 # "Global" objects...........................
 
@@ -21,8 +22,9 @@ possible_spreadsheets_list = ["C:\\Users\\Public\\pricempire_web_scraper\\[3]any
                               "C:\\Users\\Public\\pricempire_web_scraper\\[3]any_run_saves\\onlycases_run_save_file.xlsx"]
 
 # dictionary's and lists for global item accessibility
-GLOBAL_PARAM_DICT = {"website_url": "", "no_content_exception": False, "daily_save": False, "log_file_index": 0, "result_file_index": 0, "sheet_index": 0}
-PARAMS_DICT = {"daily_save": "n", "only_cases": "n", "limit": 1000000, "sort": "marketcap", "order": ":DESC", "blacklist": "", "search": "", "iterations": 5, "calc_dmarket_steam": "n"}
+GLOBAL_PARAM_DICT = {"website_url": "", "no_content_exception": False, "daily_save": False, "log_file_index": "", "result_file_index": "", "sheet_index": 0}
+PARAMS_DICT = {}
+DEFAULT_PARAMS_DICT = {}
 
 # global values
 WAIT_TIME = 10
@@ -42,14 +44,21 @@ RESULTS_PATH = "C:\\Users\\Public\\pricempire_web_scraper\\[1]result_files\\resu
 # FUNCTIONS...................................
 
 # main function:
-def main():
+def main_func():
+    # get log file index
+    get_file_index(file_path=str(LOG_PATH), global_param_name="log_file_index")
 
-    # adds log text 1 (start time of log)
-    lf.write(f"Log file " + str(GLOBAL_PARAM_DICT["log_file_index"]) + f" for normal run\n"
-                                                                       f"at {datetime.today()}|: Starting log\n")
+    # get result file index
+    get_file_index(file_path=str(RESULTS_PATH), global_param_name="result_file_index")
+
+    write_to_file(file_type="log", content=f"Log file " + str(GLOBAL_PARAM_DICT["log_file_index"]) + f" for normal run\n"
+                                                                                                     f"at {datetime.today()}|: Starting log\n")
+
+    # gets defaults params
+    get_default_params()
 
     # offer explanation
-    starting_explanaition()
+    starting_explanation()
 
     # collect all params
     get_params()
@@ -74,7 +83,6 @@ def main():
         # assigns the print results parameter
         print_results_yn = input("Print result text file? (y/n) ").lower()  # decides if program should make a spreadsheet with all the data
         while print_results_yn not in ("", "y", "n"):
-
             print("Please enter a valid parameter: (y/n) or just hit enter!")
             print_results_yn = input("Print result text file? (y/n) ").lower()
 
@@ -83,15 +91,15 @@ def main():
             print_results()
 
         # adds log text 3 (program success (if succeeded)
-        lf.write(f"at {datetime.today()}|: completed program without errors\n")
+        write_to_file(file_type="log", content=f"at {datetime.today()}|: completed program without errors\n")
 
     except Exception as e:
 
         print(f"Error when running program")
 
         # adds log text 5 (program unsuccessful(if unsuccessful))
-        lf.write(f"at {datetime.today()}|: did not complete program regularly\n")
-        lf.write(f"error was: {str(e)}\n")
+        write_to_file(file_type="log", content=f"at {datetime.today()}|: did not complete program regularly\n")
+        write_to_file(file_type="log", content=f"error was: {str(e)}\n")
 
         print(e)
 
@@ -120,7 +128,7 @@ def get_html():
         print("Button not found")
 
     # adds to log 5 (accessed website)
-    lf.write(f"at {datetime.today()}|: accessed website ({accessed_website})\n")
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: accessed website ({accessed_website})\n")
 
     # page load time:
     time.sleep(WAIT_TIME)
@@ -131,7 +139,7 @@ def get_html():
         print(f"Getting Page ({i + 1}) contents...")
 
         # adds to log 6 (confirmation for getting page contents)
-        lf.write(f"at {datetime.today()}|: Getting Page ({i + 1}) contents... ")
+        write_to_file(file_type="log", content=f"at {datetime.today()}|: Getting Page ({i + 1}) contents... ")
 
         # get the contents and start the extraction function
         try:
@@ -145,8 +153,8 @@ def get_html():
             if extract_data(contents) is False:  # if fails, reload page then try again
 
                 # adds to log 7 (unsuccessful extraction)
-                lf.write(f"UNSUCCESSFUL\n")
-                lf.write(f"at {datetime.today()}|: attempting to reload page... ")
+                write_to_file(file_type="log", content=f"UNSUCCESSFUL\n")
+                write_to_file(file_type="log", content=f"at {datetime.today()}|: attempting to reload page... ")
 
                 # reload page and wait for page load longer this time:
                 driver.refresh()
@@ -161,8 +169,8 @@ def get_html():
                 if extract_data(contents_reload) is False:  # try to access next page by link
 
                     # adds to log 8 (unsuccessful extraction)
-                    lf.write(f"UNSUCCESSFUL\n")
-                    lf.write(f"at {datetime.today()}|: attempting to skip to next page... ")
+                    write_to_file(file_type="log", content=f"UNSUCCESSFUL\n")
+                    write_to_file(file_type="log", content=f"at {datetime.today()}|: attempting to skip to next page... ")
 
                     print(f"attempting to skip to next page... ")
 
@@ -180,9 +188,8 @@ def get_html():
                     contents_reload_2 = BeautifulSoup(driver.page_source, "html.parser")
 
                     if extract_data(contents_reload_2) is False:
-
-                        lf.write(f"UNSUCCESSFUL\n")
-                        lf.write(f"at {datetime.today()}|: aborting and saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))})\n")
+                        write_to_file(file_type="log", content=f"UNSUCCESSFUL\n")
+                        write_to_file(file_type="log", content=f"at {datetime.today()}|: aborting and saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))})\n")
 
                         print(f"Something broke, saving current items (amount: {str(len(ALL_NAMES_SAVE_LIST))}) and aborting")
 
@@ -216,8 +223,8 @@ def get_html():
 # params (html contents of page)
 def extract_data(content):
 
-    lf.write(f"SUCCESSFUL\n")
-    lf.write(f"at {datetime.today()}|: setting up extraction objects\n")
+    write_to_file(file_type="log", content=f"SUCCESSFUL\n")
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: setting up extraction objects\n")
 
     print(f"Setting up extraction objects...\n")
 
@@ -253,10 +260,10 @@ def extract_data(content):
         all_prices_list_quad.append([all_prices_list[i], all_prices_list[(i + 1)],
                                      all_prices_list[(i + 2)], all_prices_list[(i + 3)]])
 
-    lf.write(f"at {datetime.today()}|: Extracted data for current page:\n\n")
-    lf.write(f"all names: {all_names_list}\n")
-    lf.write(f"all prices: {all_prices_list}\n")
-    lf.write(f"all prices in quad: {all_prices_list_quad}\n")
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: Extracted data for current page:\n\n")
+    write_to_file(file_type="log", content=f"all names: {all_names_list}\n"
+                                           f"all prices: {all_prices_list}\n"
+                                           f"all prices in quad: {all_prices_list_quad}\n")
 
     # print all lists:
     print(f"all names:"
@@ -276,7 +283,7 @@ def extract_data(content):
 
         print(f"saving to global save lists...")
 
-        lf.write(f"at {datetime.today()}|: saving to global save lists\n\n")
+        write_to_file(file_type="log", content=f"at {datetime.today()}|: saving to global save lists\n\n")
 
         # names
         for i in all_names_list:
@@ -295,7 +302,7 @@ def extract_data(content):
             if ALL_NAMES_SAVE_LIST[-1] == ALL_NAMES_SAVE_LIST[-31]:
                 print(f"page reloaded same content, retrying")
 
-                lf.write(f"at {datetime.today()}|: Page reloaded same content, retrying... ")
+                write_to_file(file_type="log", content=f"at {datetime.today()}|: Page reloaded same content, retrying... ")
 
                 return False
 
@@ -307,7 +314,7 @@ def extract_data(content):
     # "throw error" if page doesn't load
     elif len(all_names_list) < 1:
 
-        lf.write(f"at {datetime.today()}|: Page didn't load or empty, retrying... ")
+        write_to_file(file_type="log", content=f"at {datetime.today()}|: Page didn't load or empty, retrying... ")
 
         print("Page didn't load or empty, trying again")
 
@@ -331,9 +338,9 @@ def make_spreadsheet_normal():
         # assign proper sheet index
         GLOBAL_PARAM_DICT["sheet_index"] = -1
 
-        lf.write(f"at {datetime.today()}|: Exception when getting page contents..\n"
-                 f"at {datetime.today()}|: Creating exception spreadsheet and writing to it... "
-                 f"proceeding\n")
+        write_to_file(file_type="log", content=f"at {datetime.today()}|: Exception when getting page contents..\n"
+                                               f"at {datetime.today()}|: Creating exception spreadsheet and writing to it... "
+                                               f"proceeding\n")
 
     else:
 
@@ -342,8 +349,8 @@ def make_spreadsheet_normal():
             print(f"This is a daily save, creating new workbook\n"
                   f"Today is the {datetime.today()}")
 
-            lf.write(f"at {datetime.today()}|: This is a daily save ({DATE}), creating new workbook... "
-                     f"proceeding\n")
+            write_to_file(file_type="log", content=f"at {datetime.today()}|: This is a daily save ({DATE}), creating new workbook... "
+                                                   f"proceeding\n")
 
             if str(PARAMS_DICT["only_cases"]) == "y":
 
@@ -356,15 +363,15 @@ def make_spreadsheet_normal():
             daily_workbook = Workbook()
             daily_workbook.save(possible_spreadsheets_list[-1])
 
-            lf.write(f"at {datetime.today()}|: created and saved workbook successfully (name: {str(possible_spreadsheets_list[-1])})\n")
+            write_to_file(file_type="log", content=f"at {datetime.today()}|: created and saved workbook successfully (name: {str(possible_spreadsheets_list[-1])})\n")
 
             GLOBAL_PARAM_DICT["sheet_index"] = -1
 
         else:
 
-            lf.write(f"at {datetime.today()}|: No exception when making workbook..\n"
-                     f"at {datetime.today()}|: proceeding as normal with spreadsheet creation... "
-                     f"proceeding\n")
+            write_to_file(file_type="log", content=f"at {datetime.today()}|: No exception when making workbook..\n"
+                                                   f"at {datetime.today()}|: proceeding as normal with spreadsheet creation... "
+                                                   f"proceeding\n")
 
             print(f"No exception when making workbook..\n"
                   f"proceeding as normal with spreadsheet creation")
@@ -400,7 +407,7 @@ def make_spreadsheet_normal():
 
     print(f"adding data to spreadsheet...")
 
-    lf.write(f"at {datetime.today()}|: adding data rows to spreadsheet\n")
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: adding data rows to spreadsheet\n")
 
     # add all items into the rows:
     for i in range(0, len(ALL_NAMES_SAVE_LIST)):
@@ -421,10 +428,12 @@ def make_spreadsheet_normal():
         sheet.cell(row_start + i, col_start + 4).value = ALL_PRICES_QUAD_SAVE_LIST[i][3]
 
         # add estimated supply at current index
-        sheet.cell(row_start + i, col_start + 5).value = str(float(ALL_PRICES_QUAD_SAVE_LIST[i][2].translate(translation_table_for_int)) / float(ALL_PRICES_QUAD_SAVE_LIST[i][1].translate(translation_table_for_int)))
+        sheet.cell(row_start + i, col_start + 5).value = str(
+            float(ALL_PRICES_QUAD_SAVE_LIST[i][2].translate(translation_table_for_int)) / float(ALL_PRICES_QUAD_SAVE_LIST[i][1].translate(translation_table_for_int)))
 
         # add cheapest/buff arbitrage at current index
-        sheet.cell(row_start + i, col_start + 6).value = str(round(float(ALL_PRICES_QUAD_SAVE_LIST[i][1].translate(translation_table_for_int)) / float(ALL_PRICES_QUAD_SAVE_LIST[i][0].translate(translation_table_for_int)), 2)) + "%"
+        sheet.cell(row_start + i, col_start + 6).value = str(
+            round(float(ALL_PRICES_QUAD_SAVE_LIST[i][1].translate(translation_table_for_int)) / float(ALL_PRICES_QUAD_SAVE_LIST[i][0].translate(translation_table_for_int)), 2)) + "%"
 
         # add dmarket/steam arbitrage at current index if requested
         if PARAMS_DICT["calc_dmarket_steam"] == "y":
@@ -437,8 +446,8 @@ def make_spreadsheet_normal():
 
     si = int(GLOBAL_PARAM_DICT["sheet_index"])  # current solution
 
-    lf.write(f"at {datetime.today()}|: saving spreadsheet (name: {possible_spreadsheets_list[si]})...\n"
-             f"at {datetime.today()}|: saved {len(ALL_NAMES_SAVE_LIST)} rows successfully to {possible_spreadsheets_list[si]}")
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: saving spreadsheet (name: {possible_spreadsheets_list[si]})...\n"
+                                           f"at {datetime.today()}|: saved {len(ALL_NAMES_SAVE_LIST)} rows ({len(ALL_NAMES_SAVE_LIST)*6} data points) successfully to {possible_spreadsheets_list[si]}")
 
     print(f"saving spreadsheet {possible_spreadsheets_list[si]}...")
     print(f"saved {len(ALL_NAMES_SAVE_LIST)} rows successfully to {possible_spreadsheets_list[si]}")
@@ -461,11 +470,11 @@ def print_results():
 
     print(f"gathering results...")
 
-    lf.write(f"gathering results to proceed with result print (file: ")
+    write_to_file(file_type="log", content=f"gathering results to proceed with result print (file: ")
 
     for i in range(2, len(ALL_NAMES_SAVE_LIST)):
 
-        if float(str(sheet[f"G{str(i)}"].value).translate(translation_table_for_print)) < 0.7:  # 0.7 arbitrage
+        if float(str(sheet[f"G{str(i)}"].value).translate(translation_table_for_print)) < PARAMS_DICT["min_arbitrage"]:  # min arbitrage
 
             results_numbers_list.append(i)
 
@@ -473,7 +482,7 @@ def print_results():
 
             pass
 
-    lf.write(f"at {datetime.today()}|: created result file (name: C:\\Users\\Public\\pricempire_web_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: created result file (name: C:\\Users\\Public\\pricempire_web_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(
         GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt)\n")
 
     with open(f"C:\\Users\\Public\\pricempire_web_scraper\\[1]result_files\\results_for_{str(DATE)}[" + str(GLOBAL_PARAM_DICT["result_file_index"]) + f"].txt", "x", encoding="utf-8") as rf:
@@ -507,13 +516,12 @@ def print_results():
             curr_option_index += 1
 
         if len(results_numbers_list) == 0:
-
             rf.write(f"No options available right now\n")
 
-    lf.write(f"at {datetime.today()}|: Successfully wrote to result file\n")
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: Successfully wrote to result file\n")
 
 
-def starting_explanaition():
+def starting_explanation():
 
     print("PRICEMPIRE-WEB-SCRAPER by Felix Zabudkin \n")
 
@@ -534,27 +542,21 @@ def starting_explanaition():
               f"7. search --- decides if program should search for a specific string or char (options: any char or string)  NOTE: this parameter will not always be shown \n"
               f"8. cds --- decides if program should add the dmarket/steam market-price-difference respectively arbitrage to the save file (options: y/n) NOTE: this feature is still in work, so a y won't do anything \n"
               f"9. print results -- decides if a result file with buy options should be made (options: y/n) \n"
+              f"10. min arbitrage --- decides what the minimum arbitrage for the result file filter should be (options: any positive float between 0 and 1)\n"
               f"\n"
               f"You have the option to just press enter for every parameter and the respective value will be the default. \n")
 
+    show_default_param_values = input("Show default parameter values? (y/n) ").lower()
+    while show_default_param_values not in ("", "y", "n"):
+        print("Please enter a valid parameter: (y/n) or just hit enter!")
         show_default_param_values = input("Show default parameter values? (y/n) ").lower()
-        while show_default_param_values not in ("", "y", "n"):
-            print("Please enter a valid parameter: (y/n) or just hit enter!")
-            show_default_param_values = input("Show default parameter values? (y/n) ").lower()
 
-        if show_default_param_values == "y":
-            print(f"\n"
-                  f"default for... \n"
-                  f"    -only cases ->  n \n"
-                  f"    -daily save -> n \n"
-                  f"    -limit -> 1000000 \n"
-                  f"    -sort -> marketcap \n"
-                  f"    -order -> descending \n"
-                  f"    -blacklist -> NULL \n"
-                  f"    -search -> NULL\n"
-                  f"    -cds -> n \n")
+    if show_default_param_values == "y":
+        print(f"\ndefault for...")
+        for i in DEFAULT_PARAMS_DICT:
+            print(f"    {str(i)} -> {str(DEFAULT_PARAMS_DICT[str(i)])} ")
 
-            start_it = input("Press Enter to continue")
+        start_it = input("\nPress Enter to continue")
 
     print("Starting program... \n\n")
     print("Please select your parameters.")
@@ -584,31 +586,26 @@ def get_params():
     # parameters:
     only_cases = input("Search only for cases? (y/n) ").lower()  # decides if to only search for cases or not
     while only_cases not in ("", "y", "n"):
-
         print("Please enter a valid parameter: (y/n) or just hit enter!")
         only_cases = input("Search only for cases? (y/n) ").lower()
 
     daily_save = input("Is this a daily save for historical data? (y/n) ").lower()  # decides if run is treated as daily safe
     while daily_save not in ("", "y", "n"):
-
         print("Please enter a valid parameter: (y/n) or just hit enter!")
         daily_save = input("Is this a daily save for historical data? (y/n) ").lower()
 
-    limit = input("Price limit? (integer) ").lower()  # decides the price limit of the search
-    while isinstance(limit, int) is False and not limit == "":
-
-        print("Please enter a valid parameter: (ANY INTEGER) or just hit enter!")
+    limit = input("Price limit? (positive integer) ").lower()  # decides the price limit of the search
+    while is_any(needed_type="int", value=limit) is False and not limit == "":
+        print("Please enter a valid parameter: (ANY POSITIVE INTEGER) or just hit enter!")
         limit = input("Price limit? (integer) ").lower()
 
     sort = input("Sort by ...? (buff, cheapest, marketcap, tradevolume) ").lower()  # decides how the search items are sorted
     while sort not in ("", "buff", "cheapest", "marketcap", "tradevolume"):
-
         print("Please enter a valid parameter: (buff, cheapest, marketcap, tradevolume) or just hit enter!")
         sort = input("Sort by ...? (buff, cheapest, marketcap, tradevolume) ").lower()
 
     order = input("Sort ascending or descending? (a/d) ").lower()  # decides if search items are ASC or DESC
     while order not in ("", "a", "d"):
-
         print("Please enter a valid parameter: (a/d) or just hit enter!")
         order = input("Sort ascending or descending? (a/d) ").lower()
 
@@ -644,42 +641,44 @@ def get_params():
 
         else:
 
-            iterations = input("How many pages to scrape? ").lower()  # decides how many pages will be scraped
-            while isinstance(int(iterations), int) is False:  # currently not working
-
-                print("Please enter a valid parameter: (ANY INTEGER) or just hit enter!")
-                iterations = input("How many pages to scrape? ").lower()
-
+            iterations = input("How many pages to scrape? (positive integer) ")  # decides how many pages will be scraped
+            while is_any(needed_type="int", value=iterations) is False and not iterations == "":
+                print("Please enter a valid parameter: (ANY  POSITIVE INTEGER) or just hit enter!")
+                iterations = input("How many pages to scrape? (positive integer) ")
     else:
 
         iterations = ""
 
-    calc_dmarket_steam = input("Calculate dmarket/steam arbitrage? It takes long. (y/n) ").lower()  # decides if the dmarket/steam arbitrage should be calculated for each item
-    while calc_dmarket_steam not in ("", "y", "n"):
+    min_arbitrage = input("Minimum arbitrage for result file? (float between 0 and 1) ")  # decides if to only search for cases or not
+    while is_any(needed_type="float01", value=min_arbitrage) is False and not min_arbitrage == "":
+        print("Please enter a valid parameter: (float between 0 and 1) or just hit enter!")
+        min_arbitrage = input("Minimum arbitrage for result file? (float between 0 and 1) ")
 
+    calc_dmarket_steam = input("Calculate dmarket/steam arbitrage? Currently not working! (y/n) ").lower()  # decides if the dmarket/steam arbitrage should be calculated for each item
+    while calc_dmarket_steam not in ("", "y", "n"):
         print("Please enter a valid parameter: (y/n) or just hit enter!")
-        calc_dmarket_steam = input("Calculate dmarket/steam arbitrage? It takes long. (y/n) ").lower()
+        calc_dmarket_steam = input("Calculate dmarket/steam arbitrage? Currently not working! (y/n) ").lower()
 
     # default params:
 
     # limit:
     if limit == "":
-        limit = 1000000
+        limit = DEFAULT_PARAMS_DICT["limit"]
 
     # sort
     if sort == "":
-        sort = "marketcap"
+        sort = DEFAULT_PARAMS_DICT["sort"]
 
     # order
     if order == "" or order == "d":
-        order = ":DESC"
+        order = DEFAULT_PARAMS_DICT["order"]
 
     elif order == "a":
         order = ":ASC"
 
     # only cases
     if only_cases == "":
-        only_cases = "n"
+        only_cases = DEFAULT_PARAMS_DICT["only_cases"]
 
     # iterations
     if iterations == "":
@@ -694,16 +693,20 @@ def get_params():
 
         else:
 
-            iterations = 10
+            iterations = DEFAULT_PARAMS_DICT["iterations"]
 
     # calc dmarket/steam arbitrage
     if calc_dmarket_steam == "":
-        calc_dmarket_steam = "n"
+        calc_dmarket_steam = DEFAULT_PARAMS_DICT["calc_dmarket_steam"]
+
+    elif calc_dmarket_steam == "y":
+
+        calc_dmarket_steam = "n"  # because it currently doesn't work
 
     # daily save
     if daily_save == "":
 
-        daily_save = "n"
+        daily_save = DEFAULT_PARAMS_DICT["daily_save"]
 
     elif daily_save == "y":
 
@@ -720,36 +723,115 @@ def get_params():
         GLOBAL_PARAM_DICT["sheet_index"] = 0
 
     # print all info
-    print(f"\n"
-          f"only cases: {only_cases}\n"
-          f"limit: {limit}\n"
-          f"sorting: {sort}\n"
-          f"ordering: {order}\n"
-          f"iterations(pages): {iterations}\n"
-          f"...\n"
-          f"Everything Ok\n"
-          f"Expected run-time: {round(float(((int(iterations) * 10) + 40) / 60), 1)} min. (+- 30 sec if error-free)\n"
-          f"Expected amount of items: {int(int(iterations) * 30 * 4)}\n"
-          f"...\n"
-          f"Getting html contents...\n")
+    print("assigned params are:")
+    for i in PARAMS_DICT:
+        print(f"    {str(i)} -> {str(PARAMS_DICT[i])}")
+
+    print(
+        f"\n...\nEverything Ok\n"
+        f"Expected run-time: {round(float(((int(iterations) * 10) + 40) / 60), 1)} min. (+ 30-120 sec if errors occur)\n"
+        f"Expected amount of items: {int(int(iterations) * 30 * 4)}\n"
+        f"...\n"
+        f"Getting html contents...\n")
 
     # append all params to the list which saves them
-    PARAMS_DICT["daily_save"] = daily_save
-    PARAMS_DICT["only_cases"] = only_cases
-    PARAMS_DICT["limit"] = limit
-    PARAMS_DICT["sort"] = sort
-    PARAMS_DICT["order"] = order
-    PARAMS_DICT["blacklist"] = blacklist
-    PARAMS_DICT["search"] = search
-    PARAMS_DICT["iterations"] = iterations
-    PARAMS_DICT["calc_dmarket_steam"] = calc_dmarket_steam
+    PARAMS_DICT.update({"daily_save" : daily_save,
+                        "only_cases" : only_cases,
+                        "limit" : limit,
+                        "sort" : sort,
+                        "order" : order,
+                        "blacklist" : blacklist,
+                        "search": search, "iterations" : iterations,
+                        "calc_dmarket_steam" : calc_dmarket_steam,
+                        "min_arbitrage" : min_arbitrage})
 
     # adds log text 2 (all params)
-    lf.write(f"at {datetime.today()}|: Params assigned\n\n")
+    write_to_file(file_type="log", content=f"at {datetime.today()}|: Params assigned\n\n")
 
     for i in PARAMS_DICT:
-        lf.write(f"{str(i)} --- {str(PARAMS_DICT[i])}\n")
-    lf.write("\n")
+        write_to_file(file_type="log", content=f"{str(i)} --- {str(PARAMS_DICT[i])}\n")
+    write_to_file(file_type="log", content="\n")
+
+
+# function whích writes to log or result file
+def write_to_file(file_type, content):
+
+    if file_type == "log":
+
+        file_path = LOG_PATH
+
+    elif file_type == "result":
+
+        file_path = RESULTS_PATH
+
+    with open(f"{str(file_path)}{str(DATE)}[" + str(GLOBAL_PARAM_DICT["log_file_index"]) + "].txt", "a", encoding="utf-8") as lf:
+
+        lf.write(str(content))
+
+
+def get_default_params():
+
+    with open("C:\\Users\\Public\\pricempire_web_scraper\\config\\config.json", "r") as cf:
+
+        defaults = json.load(cf)['defaults']
+        for i in defaults:
+            DEFAULT_PARAMS_DICT.update({str(i): str(defaults[i])})
+
+
+def is_any(value, needed_type):
+
+    proof_list = []
+
+    if needed_type == "float":
+
+        try:
+
+            proof_list.append(float(value))
+            if float(value) < 0:
+
+                return False
+
+            else:
+
+                return True
+
+        except ValueError:
+
+            return False
+
+    elif needed_type == "float01":
+
+        try:
+
+            proof_list.append(float(value))
+            if 1 > float(value) > 0:
+
+                return True
+
+            else:
+
+                return False
+
+        except ValueError:
+
+            return False
+
+    elif needed_type == "int":
+
+        try:
+
+            proof_list.append(int(value))
+            if int(value) < 0:
+
+                return False
+
+            else:
+
+                return True
+
+        except ValueError:
+
+            return False
 
 
 # possible function to use selenium with proxy:
@@ -940,17 +1022,11 @@ def extract_steam_data(cts):
 
 # start main function for testing (CURRENT SOLUTION)
 
-# get log file index
-get_file_index(file_path=str(LOG_PATH), global_param_name="log_file_index")
 
-# get result file index
-get_file_index(file_path=str(RESULTS_PATH), global_param_name="result_file_index")
 
 # open the log file now to ease future logging
-with open(f"C:\\Users\\Public\\pricempire_web_scraper\\[2]log_files\\log_file_for_{str(DATE)}[" + str(
-        GLOBAL_PARAM_DICT["log_file_index"]) + f"].txt", "a", encoding="utf-8") as lf:
 
-    main()
+    # main_func()
 
 
 # calculate_dmarket_steam_arbitrage("AWP | Asiimov (Field-Tested)", False, "")

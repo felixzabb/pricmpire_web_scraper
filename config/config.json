@@ -1,0 +1,17 @@
+
+{
+  "defaults": {
+
+    "daily_save": "n",
+    "only_cases": "n",
+    "limit": 1000000,
+    "sort": "marketcap",
+    "order": ":DESC",
+    "blacklist": "NULL",
+    "search": "NULL",
+    "iterations": 5,
+    "min_arbitrage": 0.7,
+    "calc_dmarket_steam": "n"
+
+  }
+}
