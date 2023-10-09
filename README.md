@@ -1,4 +1,4 @@
-# pricmpire_web_scraper
+# pricempire_web_scraper
 This is a program, which scrapes the website "pricempire.com" for price data of all their CS2 items on their trending page.
 
 
